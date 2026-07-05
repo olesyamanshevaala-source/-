@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Фуд Завод — Трекер встреч</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f2f2f0;
+  --surface: #fff;
+  --border: #ddd9d4;
+  --text: #1a1714;
+  --muted: #8a8480;
+  --accent: #7a1f2e;
+  --accent-light: #f5edef;
+  --hot: #c0392b;
+  --green: #2d6a4f;
+  --orange: #b5451b;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  background: var(--bg); color: var(--text); height: 100vh;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--accent); color: #fff;
+  padding: 0 28px; height: 52px; display: flex; align-items: center; gap: 16px;
+  flex-shrink: 0;
+}
+.logo { font-weight: 900; font-size: 16px; letter-spacing: -.5px; }
+.logo small { font-weight: 400; opacity: .7; font-size: 12px; margin-left: 8px; }
+.header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.btn {
+  border: none; border-radius: 8px; padding: 7px 16px;
+  font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s;
+}
+.btn-white { background: #fff; color: var(--accent); }
+.btn-white:hover { background: var(--accent-light); }
+.btn-ghost { background: rgba(255,255,255,.15); color: #fff; }
+.btn-ghost:hover { background: rgba(255,255,255,.25); }
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-accent:hover { background: #3a5ae8; }
+.btn-green { background: var(--green); color: #fff; }
+.btn-green:hover { background: #21943f; }
+.btn-gray { background: var(--bg); color: var(--text); }
+.btn-gray:hover { background: var(--border); }
+.btn-danger { background: #fff3f3; color: var(--hot); }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+
+/* ── LAYOUT ── */
+.body { display: flex; flex: 1; overflow: hidden; }
+
+/* ── SIDEBAR (meeting list) ── */
+.sidebar {
+  width: 280px; background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden;
+}
+.sidebar-top {
+  padding: 14px 14px 10px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.new-meeting-row { display: flex; gap: 7px; margin-bottom: 10px; }
+.new-date-input {
+  flex: 1; border: 1.5px solid var(--border); border-radius: 7px; padding: 7px 9px;
+  font-size: 12.5px; font-family: inherit; outline: none;
+}
+.new-date-input:focus { border-color: var(--accent); }
+.sidebar-search {
+  width: 100%; border: 1px solid var(--border); border-radius: 7px; padding: 6px 10px;
+  font-size: 13px; font-family: inherit; outline: none;
+}
+.sidebar-search:focus { border-color: var(--accent); }
+.meetings-list { flex: 1; overflow-y: auto; padding: 8px; }
+.meetings-list::-webkit-scrollbar { width: 4px; }
+.meetings-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.meeting-card {
+  border-radius: 9px; padding: 11px 13px; cursor: pointer; margin-bottom: 4px;
+  border: 1.5px solid transparent; transition: all .12s;
+}
+.meeting-card:hover { background: var(--bg); }
+.meeting-card.active { background: var(--accent-light); border-color: var(--accent); }
+.mc-date { font-weight: 700; font-size: 13px; }
+.mc-guests { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.mc-meta { display: flex; gap: 6px; margin-top: 5px; align-items: center; }
+.mc-badge {
+  font-size: 10px; font-weight: 700; border-radius: 10px; padding: 2px 7px;
+}
+.badge-draft { background: #fdf3e7; color: var(--orange); }
+.badge-done  { background: #eaf2ec; color: var(--green); }
+.mc-tasks { font-size: 11px; color: var(--muted); margin-left: auto; }
+
+/* ── EDITOR ── */
+.editor { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.editor-toolbar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 10px 24px; display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.editor-title { font-weight: 800; font-size: 15px; flex: 1; }
+.editor-status {
+  font-size: 11px; font-weight: 700; border-radius: 10px; padding: 3px 10px;
+}
+.editor-body { flex: 1; overflow-y: auto; padding: 20px 28px; }
+.editor-body::-webkit-scrollbar { width: 5px; }
+.editor-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* empty state */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; color: var(--muted); text-align: center; gap: 12px;
+}
+.empty-state .emoji { font-size: 48px; }
+.empty-state h2 { font-size: 18px; color: var(--text); }
+.empty-state p { font-size: 13px; max-width: 340px; line-height: 1.6; }
+
+/* ── META ROW ── */
+.meta-row {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 14px 18px; display: flex; gap: 20px; align-items: flex-start; margin-bottom: 18px;
+}
+.meta-field { flex: 1; }
+.meta-field label {
+  display: block; font-size: 10px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .6px; margin-bottom: 4px;
+}
+.meta-field input {
+  width: 100%; border: 1.5px solid var(--border); border-radius: 7px;
+  padding: 7px 10px; font-size: 13px; font-family: inherit; outline: none;
+}
+.meta-field input:focus { border-color: var(--accent); }
+.meta-fixed { font-size: 12px; color: var(--muted); line-height: 1.75; }
+
+/* ── SECTION ── */
+.section {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  margin-bottom: 10px; overflow: hidden;
+}
+.sec-head {
+  display: flex; align-items: center; gap: 11px; padding: 13px 16px;
+  cursor: pointer; user-select: none; transition: background .12s;
+}
+.sec-head:hover { background: #fafbff; }
+.sec-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+.sec-label { font-weight: 700; font-size: 13.5px; flex: 1; }
+.sec-cnt { font-size: 12px; color: var(--muted); }
+.sec-arrow { font-size: 11px; color: var(--muted); transition: transform .2s; }
+.section.open .sec-arrow { transform: rotate(90deg); }
+.sec-body { display: none; border-top: 1px solid var(--border); padding: 14px 16px; }
+.section.open .sec-body { display: block; }
+
+/* Mini calendar */
+.mini-cal { padding: 10px 12px 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.cal-month { font-size: 11.5px; font-weight: 700; color: var(--text); text-transform: capitalize; }
+.cal-btn { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 16px; line-height: 1; padding: 0 3px; }
+.cal-btn:hover { color: var(--accent); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+.cal-dow { font-size: 9px; font-weight: 700; color: var(--muted); text-align: center; padding: 1px 0 3px; }
+.cal-day { font-size: 11px; text-align: center; padding: 3px 1px; border-radius: 4px; cursor: default; }
+.cal-day.in-month { cursor: pointer; }
+.cal-day.in-month:not(.has-mtg):hover { background: var(--accent-light); }
+.cal-day.has-mtg { background: var(--accent-light); color: var(--accent); font-weight: 700; cursor: pointer; }
+.cal-day.has-mtg:hover { background: var(--accent); color: #fff; }
+.cal-day.is-today:not(.has-mtg) { color: var(--accent); font-weight: 700; box-shadow: 0 0 0 1.5px var(--accent) inset; }
+.cal-day.is-today.has-mtg { box-shadow: 0 0 0 1.5px #fff4 inset; }
+.cal-day.out-month { color: #ccc; }
+
+/* VT manage box */
+.vt-manage-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+.vt-manage-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.vt-manage-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.vt-edit-toggle { background: none; border: 1px solid var(--border); border-radius: 6px; font-size: 11px; padding: 3px 9px; cursor: pointer; color: var(--muted); font-family: inherit; }
+.vt-edit-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.vt-edit-panel { background: #faf9f7; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+.vt-edit-hint { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+.vt-global-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.vt-global-item { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 3px 8px 3px 7px; }
+.vt-chip-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.vt-chip-del { background: none; border: none; cursor: pointer; font-size: 14px; color: #bbb; padding: 0; margin-left: 1px; line-height: 1; }
+.vt-chip-del:hover { color: var(--hot); }
+.vt-add-row { display: flex; gap: 8px; }
+.vt-add-inp { flex: 1; border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; font-size: 13px; font-family: inherit; outline: none; }
+.vt-add-inp:focus { border-color: var(--accent); }
+/* picker chips */
+.vt-picker { display: flex; flex-wrap: wrap; gap: 7px; }
+.vt-pick-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; border: 1.5px solid; border-radius: 20px; padding: 5px 13px 5px 10px; cursor: pointer; transition: all .13s; background: #fff; user-select: none; }
+.vt-pick-chip:hover { opacity: .8; }
+.vt-pick-chip.sel { color: #fff; }
+
+.field-label {
+  font-size: 10px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px;
+}
+.notes-area {
+  width: 100%; border: 1.5px solid var(--border); border-radius: 8px;
+  padding: 9px 11px; font-size: 13px; font-family: inherit; resize: vertical;
+  min-height: 65px; outline: none; color: var(--text); line-height: 1.55;
+}
+.notes-area:focus { border-color: var(--accent); }
+.notes-area::placeholder { color: #c5cdd8; }
+
+/* task rows */
+.task-rows { margin: 10px 0 8px; display: flex; flex-direction: column; gap: 4px; }
+.task-row {
+  display: flex; align-items: center; gap: 8px; background: var(--bg);
+  border-radius: 7px; padding: 7px 10px; font-size: 13px;
+}
+.tr-title { flex: 1; }
+.tr-chip { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.tr-hot { font-size: 12px; }
+.tr-del { border: none; background: transparent; color: #ccc; cursor: pointer; font-size: 14px; padding: 0 2px; }
+.tr-del:hover { color: var(--hot); }
+.tr-edit-btn { border: none; background: transparent; color: #ccc; cursor: pointer; font-size: 12px; padding: 0 2px; }
+.tr-edit-btn:hover { color: var(--accent); }
+.task-row.editing { background: #fff9f0; border: 1.5px solid var(--accent); flex-wrap: wrap; gap: 5px; padding: 8px 10px; }
+.tr-e-inp { border: 1.5px solid var(--border); border-radius: 6px; padding: 5px 8px; font-size: 12.5px; font-family: inherit; outline: none; background: #fff; }
+.tr-e-inp:focus { border-color: var(--accent); }
+.tr-save { background: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 5px 11px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.tr-cancel-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 5px 9px; font-size: 12px; cursor: pointer; color: var(--muted); }
+.tr-done-row { opacity: .6; }
+.tr-check { width: 15px; height: 15px; accent-color: var(--green); cursor: pointer; flex-shrink: 0; }
+.tr-carried-row { background: #fff8ee; border-left: 3px solid #e6a817; }
+.tr-carried { font-size: 10px; font-weight: 700; color: #b07d10; background: #fff3d0; border-radius: 8px; padding: 2px 7px; white-space: nowrap; flex-shrink: 0; }
+
+.add-row {
+  display: flex; gap: 6px; align-items: center; margin-top: 6px;
+}
+.add-row input, .add-row select {
+  border: 1.5px solid var(--border); border-radius: 7px; padding: 6px 9px;
+  font-size: 12.5px; font-family: inherit; outline: none; background: var(--surface);
+}
+.add-row input:focus, .add-row select:focus { border-color: var(--accent); }
+.ar-title { flex: 1; }
+.ar-resp { width: 115px; }
+.ar-date { width: 125px; color: var(--muted); }
+.ar-prio { width: 90px; }
+.ar-btn {
+  background: var(--accent); color: #fff; border: none; border-radius: 7px;
+  padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.ar-btn:hover { background: #3a5ae8; }
+
+/* ── BOTTOM BAR ── */
+.bottom-bar {
+  background: var(--surface); border-top: 1px solid var(--border);
+  padding: 11px 24px; display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.bb-info { flex: 1; font-size: 13px; color: var(--muted); }
+.bb-info strong { color: var(--text); }
+.bb-warn { background: #fff8e1; color: var(--orange); border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 600; }
+
+/* ── MODAL ── */
+.overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4);
+  z-index: 200; align-items: center; justify-content: center;
+}
+.overlay.open { display: flex; }
+.modal {
+  background: var(--surface); border-radius: 14px; padding: 24px;
+  width: 360px; max-width: 95vw; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+}
+.modal h3 { font-size: 15px; margin-bottom: 14px; }
+.modal p { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+.modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ── TYPE TOGGLE in sidebar ── */
+.type-toggle { display: flex; border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
+.tt-btn { flex: 1; border: none; background: transparent; padding: 6px 4px; font-size: 11.5px; font-weight: 600; cursor: pointer; color: var(--muted); font-family: inherit; transition: all .15s; }
+.tt-btn.on { background: var(--accent); color: #fff; }
+
+/* ── WR (Weekly Review simple mode) ── */
+.wr-wrap { max-width: 680px; margin: 0 auto; padding: 20px 28px; }
+.wr-meta { display: flex; gap: 14px; align-items: flex-end; margin-bottom: 18px; flex-wrap: wrap; }
+.wr-meta-field { display: flex; flex-direction: column; gap: 4px; }
+.wr-meta-field label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.wr-meta-field input { border: 1.5px solid var(--border); border-radius: 7px; padding: 7px 10px; font-size: 13px; font-family: inherit; outline: none; }
+.wr-meta-field input:focus { border-color: var(--accent); }
+
+.wr-fast-add {
+  background: var(--surface); border: 2px solid var(--accent); border-radius: 12px;
+  padding: 12px 16px; display: flex; gap: 8px; align-items: center; margin-bottom: 20px;
+}
+.wr-fast-input {
+  flex: 1; border: none; outline: none; font-size: 15px; font-family: inherit;
+  color: var(--text); background: transparent;
+}
+.wr-fast-input::placeholder { color: #c0c8d8; }
+.wr-fast-resp { width: 120px; border: 1.5px solid var(--border); border-radius: 7px; padding: 6px 9px; font-size: 12.5px; font-family: inherit; outline: none; }
+.wr-fast-resp:focus { border-color: var(--accent); }
+.wr-fast-date { width: 125px; border: 1.5px solid var(--border); border-radius: 7px; padding: 6px 9px; font-size: 12.5px; font-family: inherit; outline: none; color: var(--muted); }
+.wr-fast-prio { border: 1.5px solid var(--border); border-radius: 7px; padding: 6px 8px; font-size: 12.5px; font-family: inherit; outline: none; background: var(--surface); cursor: pointer; }
+.wr-fast-prio.hot-on { border-color: var(--hot); background: #fff3f3; }
+.wr-add-btn { background: var(--accent); color: #fff; border: none; border-radius: 7px; padding: 7px 16px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.wr-add-btn:hover { background: #3a5ae8; }
+
+.agenda-box {
+  background: #fdf8f0; border: 1.5px solid #e8d8b0; border-radius: 12px;
+  padding: 14px 16px; margin-bottom: 18px;
+}
+.agenda-label { font-size: 11px; font-weight: 700; color: #8a6a30; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; }
+.agenda-area {
+  width: 100%; border: none; background: transparent; outline: none;
+  font-size: 13.5px; font-family: inherit; color: var(--text); line-height: 1.65;
+  resize: vertical; min-height: 100px;
+}
+.agenda-area::placeholder { color: #c0a870; }
+
+/* SHARE VIEW (read-only page shown via URL hash) */
+.share-view { max-width: 680px; margin: 40px auto; padding: 0 24px 60px; }
+.sv-header { border-bottom: 3px solid var(--accent); padding-bottom: 14px; margin-bottom: 24px; }
+.sv-logo { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
+.sv-title { font-size: 22px; font-weight: 900; }
+.sv-meta { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.sv-section { margin-bottom: 28px; }
+.sv-section h2 { font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+.sv-agenda { font-size: 14px; line-height: 1.75; white-space: pre-wrap; color: var(--text); }
+.sv-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+.sv-item:last-child { border-bottom: none; }
+.sv-num { color: var(--muted); font-size: 12px; min-width: 20px; padding-top: 1px; }
+.sv-item-body { flex: 1; }
+.sv-item-meta { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+.sv-badge { display: inline-block; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 2px 7px; margin-right: 4px; }
+.sv-idea { background: #fffde7; color: #856404; }
+.sv-hot  { background: #fef0ee; color: var(--hot); }
+.sv-back { display: inline-block; margin-bottom: 16px; color: var(--accent); font-size: 13px; cursor: pointer; font-weight: 600; }
+.sv-back:hover { text-decoration: underline; }
+.sv-watermark { text-align: center; color: var(--border); font-size: 11px; margin-top: 40px; }
+
+.wr-list-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.wr-list-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; flex: 1; }
+.wr-cnt { font-size: 11px; color: var(--muted); }
+
+.wr-item {
+  background: var(--surface); border: 1px solid var(--border); border-left: 3px solid transparent;
+  border-radius: 9px; padding: 10px 14px; display: flex; align-items: center;
+  gap: 10px; margin-bottom: 6px; transition: box-shadow .12s;
+}
+.wr-item:hover { box-shadow: 0 2px 6px rgba(0,0,0,.07); }
+.wr-item.hot  { border-left-color: var(--hot); }
+.wr-item.done { opacity: .38; }
+.wr-item.idea { border-left-color: #e6b800; }
+.wr-check { width: 16px; height: 16px; border: 2px solid var(--border); border-radius: 4px; flex-shrink: 0; cursor: pointer; transition: all .12s; }
+.wr-check:hover { border-color: var(--green); }
+.wr-check.checked { background: var(--green); border-color: var(--green); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; }
+.wr-item-body { flex: 1; min-width: 0; }
+.wr-item-title { font-size: 13.5px; font-weight: 500; }
+.wr-item-meta { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+.wr-item-actions { display: none; gap: 4px; }
+.wr-item:hover .wr-item-actions { display: flex; }
+.wr-ia { border: 1px solid var(--border); background: var(--bg); border-radius: 5px; padding: 2px 7px; font-size: 11px; cursor: pointer; }
+.wr-ia:hover { background: var(--border); }
+.wr-ia.del:hover { background: #fff3f3; border-color: #fcd8d8; color: var(--hot); }
+
+/* type badge on card */
+.type-badge { font-size: 10px; font-weight: 700; border-radius: 10px; padding: 2px 7px; }
+.type-badge.vt { background: #eef1fe; color: var(--accent); }
+.type-badge.wr { background: #e8f8ee; color: var(--green); }
+
+/* ── SPRINT MODAL ── */
+.sprint-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; align-items:flex-start; justify-content:center; padding:30px 0; overflow-y:auto; }
+.sprint-overlay.open { display:flex; }
+.sprint-modal { background:#fff; border-radius:16px; width:780px; max-width:95vw; display:flex; flex-direction:column; box-shadow:0 12px 40px rgba(0,0,0,.25); overflow:hidden; margin-bottom:30px; }
+.sprint-head { padding:16px 22px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; flex-shrink:0; }
+.sprint-head h2 { margin:0; font-size:16px; }
+.sprint-week-nav { display:flex; align-items:center; gap:8px; margin-left:auto; }
+.sprint-week-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:4px 11px; font-size:16px; cursor:pointer; color:var(--muted); font-family:inherit; }
+.sprint-week-btn:hover { border-color:var(--accent); color:var(--accent); }
+.sprint-week-lbl { font-size:12.5px; font-weight:600; color:var(--text); min-width:210px; text-align:center; }
+.sprint-close { background:none; border:none; font-size:22px; cursor:pointer; color:var(--muted); margin-left:10px; }
+.sprint-body { flex:1; padding:16px 22px; display:flex; flex-direction:column; gap:12px; }
+.spr-card { background:var(--bg); border-radius:12px; padding:13px 15px; }
+.spr-card-head { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+.spr-person-dot { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+.spr-person-name { font-weight:700; font-size:13.5px; }
+.spr-count { font-size:11.5px; color:var(--muted); }
+.spr-new-btn { margin-left:auto; background:var(--accent); color:#fff; border:none; border-radius:7px; padding:5px 12px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; }
+.spr-new-btn:hover { opacity:.85; }
+.spr-tasks { display:flex; flex-direction:column; gap:4px; margin-bottom:6px; }
+.spr-task-row { display:flex; align-items:center; gap:9px; background:#fff; border-radius:8px; padding:7px 10px; font-size:13px; border-left:3px solid #e6b800; }
+.spr-task-row.spr-done { opacity:.5; border-left-color:var(--green); }
+.spr-chk { width:15px; height:15px; accent-color:var(--green); cursor:pointer; flex-shrink:0; }
+.spr-ttl { flex:1; }
+.spr-done-txt { text-decoration:line-through; }
+.spr-badge { font-size:10px; color:var(--muted); background:#eee; border-radius:5px; padding:2px 6px; white-space:nowrap; }
+.spr-rm { background:none; border:none; color:#ccc; cursor:pointer; font-size:14px; padding:0 2px; }
+.spr-rm:hover { color:var(--hot); }
+.spr-empty-msg { font-size:12px; color:var(--muted); padding:2px 0 6px; }
+.spr-backlog { margin-top:4px; }
+.spr-backlog summary { font-size:12px; color:var(--muted); cursor:pointer; padding:3px 0; user-select:none; }
+.spr-backlog-list { display:flex; flex-direction:column; gap:3px; margin-top:6px; }
+.spr-bl-row { display:flex; align-items:center; gap:8px; font-size:12.5px; background:#fff; border-radius:7px; padding:6px 10px; }
+.spr-bl-add { background:#fff8e1; border:1.5px solid #e6b800; color:#856404; border-radius:6px; padding:3px 8px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+.spr-bl-add:hover { background:#e6b800; color:#fff; }
+.spr-add-form { display:flex; gap:7px; margin-top:8px; }
+.spr-add-inp { flex:1; border:1.5px solid var(--border); border-radius:8px; padding:7px 10px; font-size:13px; font-family:inherit; outline:none; }
+.spr-add-inp:focus { border-color:var(--accent); }
+.spr-add-ok { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:7px 14px; font-size:12px; font-weight:700; cursor:pointer; }
+
+/* ── REPORT MODAL ── */
+.report-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:200; align-items:flex-start; justify-content:center; padding-top:40px; }
+.report-overlay.open { display:flex; }
+.report-modal { background:#fff; border-radius:16px; width:720px; max-width:95vw; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 12px 40px rgba(0,0,0,.2); overflow:hidden; }
+.report-head { padding:18px 22px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; flex-shrink:0; }
+.report-head h2 { flex:1; margin:0; font-size:16px; }
+.report-close { background:none; border:none; font-size:20px; cursor:pointer; color:var(--muted); padding:0; }
+.report-filters { padding:14px 22px; border-bottom:1px solid var(--border); display:flex; gap:10px; align-items:center; flex-shrink:0; flex-wrap:wrap; }
+.report-select { border:1.5px solid var(--border); border-radius:8px; padding:7px 10px; font-size:13px; font-family:inherit; outline:none; background:#fff; }
+.report-select:focus { border-color:var(--accent); }
+.report-body { flex:1; overflow-y:auto; padding:16px 22px; }
+.rpt-group { margin-bottom:20px; }
+.rpt-group-title { font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+.rpt-row { display:flex; align-items:center; gap:10px; padding:8px 10px; background:var(--bg); border-radius:8px; margin-bottom:4px; font-size:13px; }
+.rpt-row.done-row { opacity:.5; }
+.rpt-check { width:15px; height:15px; accent-color:var(--green); cursor:pointer; flex-shrink:0; }
+.rpt-title { flex:1; }
+.rpt-title.done-txt { text-decoration:line-through; }
+.rpt-chip { font-size:11px; color:var(--muted); white-space:nowrap; }
+.rpt-from { font-size:10px; color:var(--muted); background:#eee; border-radius:6px; padding:2px 7px; white-space:nowrap; }
+.rpt-empty { color:var(--muted); font-size:13px; text-align:center; padding:30px 0; }
+.report-stat { font-size:12px; color:var(--muted); margin-left:auto; }
+
+@media print {
+  .sidebar, .editor-toolbar, .bottom-bar, .header { display: none !important; }
+  .editor-body { padding: 0; overflow: visible; }
+  body { height: auto; overflow: auto; }
+  .add-row { display: none; }
+}
+</style>
+</head>
+<body>
+
+<datalist id="resp-list"></datalist>
+
+<div class="header">
+  <div class="logo">🏭 Фуд Завод <small>Трекер встреч</small></div>
+  <div class="header-right">
+    <button class="btn btn-ghost" onclick="openSprint()">⚡ Спринты</button>
+    <button class="btn btn-ghost" onclick="openReport()">📊 Отчёт по участнику</button>
+    <button class="btn btn-ghost" onclick="window.print()">↓ Печать</button>
+  </div>
+</div>
+
+<!-- SPRINT MODAL -->
+<div class="sprint-overlay" id="sprint-overlay" onclick="if(event.target===this)closeSprint()">
+  <div class="sprint-modal">
+    <div class="sprint-head">
+      <h2>⚡ Спринты</h2>
+      <div class="sprint-week-nav">
+        <button class="sprint-week-btn" onclick="sprintPrevWeek()">‹</button>
+        <span class="sprint-week-lbl" id="sprint-week-lbl"></span>
+        <button class="sprint-week-btn" onclick="sprintNextWeek()">›</button>
+      </div>
+      <button class="sprint-close" onclick="closeSprint()">×</button>
+    </div>
+    <div class="sprint-body" id="sprint-body"></div>
+  </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div class="report-overlay" id="report-overlay" onclick="if(event.target===this)closeReport()">
+  <div class="report-modal">
+    <div class="report-head">
+      <h2>📊 Отчёт по участнику</h2>
+      <span class="report-stat" id="rpt-stat"></span>
+      <button class="report-close" onclick="closeReport()">×</button>
+    </div>
+    <div class="report-filters">
+      <select class="report-select" id="rpt-person" onchange="renderReport()">
+        <option value="">— Выберите участника —</option>
+      </select>
+      <select class="report-select" id="rpt-filter" onchange="renderReport()">
+        <option value="all">Все задачи</option>
+        <option value="open">Только активные</option>
+        <option value="done">Только выполненные</option>
+      </select>
+      <select class="report-select" id="rpt-type" onchange="renderReport()">
+        <option value="all">Все встречи</option>
+        <option value="vt">1-1</option>
+        <option value="wr">Weekly Review</option>
+      </select>
+    </div>
+    <div class="report-body" id="rpt-body">
+      <div class="rpt-empty">Выберите участника для просмотра задач</div>
+    </div>
+  </div>
+</div>
+
+<div class="body">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-top">
+      <div class="type-toggle">
+        <button class="tt-btn on" id="tt-wr"  onclick="setNewType('wr')">📋 Weekly Review</button>
+        <button class="tt-btn"    id="tt-vt"  onclick="setNewType('vt')">👥 1-1</button>
+      </div>
+      <div class="new-meeting-row">
+        <input class="new-date-input" type="date" id="new-date">
+        <button class="btn btn-white btn-sm" style="background:var(--accent);color:#fff" onclick="createMeeting()">+ Создать</button>
+      </div>
+      <input class="sidebar-search" id="sidebar-search" placeholder="🔍 Поиск встреч…" oninput="renderList()">
+    </div>
+    <div id="mini-cal" class="mini-cal"></div>
+    <div class="meetings-list" id="meetings-list"></div>
+  </div>
+
+  <!-- EDITOR -->
+  <div class="editor">
+    <div class="editor-toolbar" id="editor-toolbar" style="display:none">
+      <div class="editor-title" id="editor-title"></div>
+      <span class="editor-status" id="editor-status"></span>
+      <button class="btn btn-gray btn-sm" onclick="deleteMeeting()">🗑 Удалить</button>
+    </div>
+    <div class="editor-body" id="editor-body">
+      <div class="empty-state">
+        <div class="emoji">📋</div>
+        <h2>Weekly Review</h2>
+        <p>Выберите встречу из списка слева или создайте новую, указав дату и нажав «Создать»</p>
+      </div>
+    </div>
+    <div class="bottom-bar" id="bottom-bar" style="display:none">
+      <div class="bb-info" id="bb-info"></div>
+      <button class="btn btn-gray btn-sm" onclick="saveDraft()">💾 Сохранить черновик</button>
+      <button class="btn btn-green btn-sm" id="btn-finish" onclick="finishOrUpdate()"></button>
+    </div>
+  </div>
+
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="overlay" id="confirm-modal">
+  <div class="modal">
+    <h3 id="confirm-title">Подтвердите действие</h3>
+    <p id="confirm-text"></p>
+    <div class="modal-btns">
+      <button class="btn btn-gray btn-sm" onclick="closeConfirm()">Отмена</button>
+      <button class="btn btn-green btn-sm" id="confirm-ok">Подтвердить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────
+const DEFAULT_SECTIONS = [
+  { key: 'production', label: 'Директор по производству',        color: '#f39c12' },
+  { key: 'finance',    label: 'Финансовый директор',             color: '#16a085' },
+  { key: 'rd',         label: 'R&D продакт-менеджер',            color: '#2980b9' },
+  { key: 'commercial', label: 'Коммерческий директор',           color: '#2ecc71' },
+  { key: 'accounting', label: 'Главный бухгалтер',               color: '#1abc9c' },
+  { key: 'hr',         label: 'HRD',                             color: '#e91e63' },
+  { key: 'supply',     label: 'Руководитель отдела снабжения',   color: '#e67e22' },
+  { key: 'biot',       label: 'Инженер охраны труда',            color: '#607d8b' },
+  { key: 'it',         label: 'IT-специалист',                   color: '#00bcd4' },
+  { key: 'sb',         label: 'Руководитель СБ',                 color: '#546e7a' },
+  { key: 'biotpb',     label: 'Инженер охраны труда ТБ и ПБ',   color: '#795548' },
+  { key: 'admin',      label: 'CEO',                             color: '#4f6ef7' },
+];
+// alias for backward compat
+const SECTIONS = DEFAULT_SECTIONS;
+const VT_PEOPLE_VER = 2;
+
+const SECTION_PALETTE = ['#f39c12','#16a085','#2ecc71','#e91e63','#e67e22','#1abc9c','#00bcd4','#607d8b','#4f6ef7','#2980b9','#795548','#546e7a'];
+
+// ── GLOBAL VT PEOPLE LIST ─────────────────────────────────────────────────
+function loadVTPeople() {
+  const ver = parseInt(localStorage.getItem('fz_vt_people_ver') || '0');
+  const s = localStorage.getItem('fz_vt_people');
+  if (!s || ver < VT_PEOPLE_VER) {
+    const def = JSON.parse(JSON.stringify(DEFAULT_SECTIONS));
+    localStorage.setItem('fz_vt_people', JSON.stringify(def));
+    localStorage.setItem('fz_vt_people_ver', String(VT_PEOPLE_VER));
+    return def;
+  }
+  return JSON.parse(s);
+}
+function saveVTPeople() {
+  localStorage.setItem('fz_vt_people', JSON.stringify(vtPeople));
+  localStorage.setItem('fz_vt_people_ver', String(VT_PEOPLE_VER));
+  updateRespList();
+}
+let vtPeople = loadVTPeople();
+let vtEditOpen = false;
+
+// ── STORAGE ───────────────────────────────────────────────────────────────
+function loadMeetings() { return JSON.parse(localStorage.getItem('fz_meetings') || '[]'); }
+function saveMeetings(m) { localStorage.setItem('fz_meetings', JSON.stringify(m)); }
+
+// migrate old fz_reviews if any
+(function migrate() {
+  const old = localStorage.getItem('fz_reviews');
+  if (!old) return;
+  try {
+    const reviews = JSON.parse(old);
+    const existing = loadMeetings();
+    if (!existing.length && reviews.length) {
+      const migrated = reviews.map(r => ({
+        id: r.savedAt || Date.now().toString(),
+        date: r.date || '',
+        guests: r.participants || '',
+        sections: r.sections || {},
+        status: 'done',
+        createdAt: r.savedAt || new Date().toISOString(),
+        savedAt: r.savedAt || new Date().toISOString(),
+      }));
+      saveMeetings(migrated);
+      localStorage.removeItem('fz_reviews');
+    }
+  } catch(e) {}
+})();
+
+let meetings = loadMeetings();
+let currentId = null;
+let newType = 'wr';
+let wrEditingIdx = null; // index of WR item being edited
+let vtEditTask = null;   // { key, idx } of VT task being edited
+
+function setNewType(t) {
+  newType = t;
+  document.getElementById('tt-wr').classList.toggle('on', t === 'wr');
+  document.getElementById('tt-vt').classList.toggle('on', t === 'vt');
+  renderList();
+}
+
+function getMeeting(id) { return meetings.find(m => m.id === id); }
+function currentMeeting() { return getMeeting(currentId); }
+
+function blankSections(secs) {
+  const s = {};
+  (secs || DEFAULT_SECTIONS).forEach(sec => { s[sec.key] = { notes: '', tasks: [] }; });
+  return s;
+}
+
+// ── CREATE ────────────────────────────────────────────────────────────────
+function createMeeting() {
+  const date = document.getElementById('new-date').value || todayStr();
+  const id = Date.now().toString();
+  const base = { id, date, guests: '', type: newType,
+    status: 'draft', createdAt: new Date().toISOString(), savedAt: null };
+  if (newType === 'vt') {
+    meetings.unshift({ ...base, vtSections: [], sections: {} });
+  } else {
+    meetings.unshift({ ...base, items: [] }); // WR: flat list of items
+  }
+  saveMeetings(meetings);
+  renderList();
+  openMeeting(id);
+}
+
+function deleteMeeting() {
+  if (!currentId) return;
+  const m = currentMeeting();
+  showConfirm(
+    'Удалить встречу?',
+    `Встреча ${fmtDateFull(m.date)} будет удалена. Задачи в трекере останутся.`,
+    () => {
+      meetings = meetings.filter(x => x.id !== currentId);
+      saveMeetings(meetings);
+      currentId = null;
+      renderList();
+      showEmpty();
+    }
+  );
+}
+
+// ── OPEN / RENDER ─────────────────────────────────────────────────────────
+function openMeeting(id) {
+  currentId = id;
+  const m = getMeeting(id);
+  if (m && m.type !== newType) { newType = m.type; }
+  renderList();
+  renderEditor();
+}
+
+function renderEditor() {
+  const m = currentMeeting();
+  if (!m) { showEmpty(); return; }
+  if (m.type === 'wr') { renderWR(m); return; }
+  renderVT(m);
+}
+
+// ── WEEKLY REVIEW (simple list) ───────────────────────────────────────────
+function renderWR(m) {
+  document.getElementById('editor-toolbar').style.display = '';
+  document.getElementById('bottom-bar').style.display = '';
+
+  document.getElementById('editor-title').textContent = '📋 Weekly Review · ' + fmtDateFull(m.date);
+  setStatusBadge(m);
+
+  const finBtn = document.getElementById('btn-finish');
+  finBtn.textContent = m.status === 'done' ? '🔄 Обновить в трекере' : '✓ Сохранить задачи в трекер';
+  finBtn.className = 'btn btn-sm ' + (m.status === 'done' ? 'btn-accent' : 'btn-green');
+
+  const items = m.items || [];
+  const taskCount = items.filter(i => i.kind !== 'idea').length;
+  const ideaCount = items.filter(i => i.kind === 'idea').length;
+
+  const listHtml = items.length ? items.map((item, idx) => {
+    if (wrEditingIdx === idx) {
+      // inline edit row
+      return `<div class="wr-item" style="flex-direction:column;align-items:stretch;gap:6px;border-color:var(--accent);background:#f8faff">
+        <div style="display:flex;gap:6px;align-items:center">
+          <input class="wr-fast-input" id="wei-title" value="${escHtml(item.title)}" style="flex:1;border:1.5px solid var(--accent);border-radius:7px;padding:6px 9px;font-size:13.5px;font-family:inherit;outline:none">
+          <input class="wr-fast-resp" id="wei-resp" value="${escHtml(item.resp||'')}" placeholder="Ответственный" list="resp-list">
+          <input class="wr-fast-date" id="wei-date" type="date" value="${item.date||''}">
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <select class="wr-fast-prio" id="wei-prio">
+            <option value="normal" ${item.priority==='normal'?'selected':''}>Обычная</option>
+            <option value="hot"    ${item.priority==='hot'   ?'selected':''}>🔥 Горит</option>
+            <option value="low"    ${item.priority==='low'   ?'selected':''}>Низкий</option>
+          </select>
+          <select class="wr-fast-prio" id="wei-kind" style="width:95px">
+            <option value="task" ${item.kind!=='idea'?'selected':''}>Задача</option>
+            <option value="idea" ${item.kind==='idea'?'selected':''}>💡 Идея</option>
+          </select>
+          <button class="wr-add-btn wr-save-edit" data-idx="${idx}" style="padding:6px 14px">💾 Сохранить</button>
+          <button class="wr-ia wr-cancel-edit" style="margin-left:2px">Отмена</button>
+        </div>
+      </div>`;
+    }
+    const metaParts = [];
+    if (item.resp) metaParts.push('👤 ' + escHtml(item.resp));
+    if (item.date) metaParts.push('📅 ' + fmtDate(item.date));
+    if (item.kind === 'idea') metaParts.push('💡 Идея');
+    if (item.priority === 'hot') metaParts.push('🔥');
+    return `<div class="wr-item ${item.priority === 'hot' ? 'hot' : ''} ${item.kind === 'idea' ? 'idea' : ''} ${item.done ? 'done' : ''}">
+      <div class="wr-check ${item.done ? 'checked' : ''} wr-done-btn" data-idx="${idx}">${item.done ? '✓' : ''}</div>
+      <div class="wr-item-body">
+        <div class="wr-item-title">${escHtml(item.title)}</div>
+        ${metaParts.length ? `<div class="wr-item-meta">${metaParts.join(' · ')}</div>` : ''}
+      </div>
+      <div class="wr-item-actions">
+        <button class="wr-ia wr-edit-btn" data-idx="${idx}">✏️</button>
+        <button class="wr-ia del wr-del-btn" data-idx="${idx}">🗑</button>
+      </div>
+    </div>`;
+  }).join('') : '<div style="color:var(--muted);font-size:13px;padding:8px 0">Добавьте первую задачу или идею ↑</div>';
+
+  document.getElementById('editor-body').innerHTML = `
+    <div class="wr-wrap">
+      <div class="wr-meta">
+        <div class="wr-meta-field">
+          <label>Дата</label>
+          <input type="date" id="wr-date" value="${m.date}" style="width:150px">
+        </div>
+        <div class="wr-meta-field" style="flex:1">
+          <label>Участники / приглашённые</label>
+          <input type="text" id="wr-guests" value="${escHtml(m.guests||'')}" placeholder="Кто присутствовал…">
+        </div>
+        <button class="wr-add-btn" id="share-btn" style="white-space:nowrap;background:var(--text)" onclick="shareAgenda()">🔗 Поделиться повесткой</button>
+      </div>
+
+      <div class="agenda-box">
+        <div class="agenda-label">📋 Повестка / темы для обсуждения</div>
+        <textarea class="agenda-area" id="wr-agenda" placeholder="Напишите темы, вопросы и идеи для обсуждения на встрече…&#10;&#10;Это не задачи — просто повестка, которую увидят участники по ссылке.">${escHtml(m.agenda||'')}</textarea>
+      </div>
+
+      <div class="wr-fast-add">
+        <input class="wr-fast-input" id="wr-input" placeholder="✏️ Задача или идея — нажмите Enter…" autocomplete="off">
+        <input class="wr-fast-resp" id="wr-resp" placeholder="Ответственный" list="resp-list">
+        <input class="wr-fast-date" id="wr-date-field" type="date">
+        <select class="wr-fast-prio" id="wr-prio">
+          <option value="normal">Обычная</option>
+          <option value="hot">🔥 Горит</option>
+          <option value="low">Низкий</option>
+        </select>
+        <select class="wr-fast-prio" id="wr-kind" style="width:85px">
+          <option value="task">Задача</option>
+          <option value="idea">💡 Идея</option>
+        </select>
+        <button class="wr-add-btn" id="wr-add-btn">+ Добавить</button>
+      </div>
+
+      <div class="wr-list-header">
+        <div class="wr-list-title">Список встречи</div>
+        <div class="wr-cnt">${taskCount} задач${ideaCount ? ' · ' + ideaCount + ' идей' : ''}</div>
+      </div>
+      ${listHtml}
+    </div>`;
+
+  // listeners
+  document.getElementById('wr-date').addEventListener('change', e => { m.date = e.target.value; autoSave(); document.getElementById('editor-title').textContent = '📋 Weekly Review · ' + fmtDateFull(e.target.value); renderList(); });
+  document.getElementById('wr-guests').addEventListener('input', e => { m.guests = e.target.value; autoSave(); });
+  document.getElementById('wr-agenda').addEventListener('input', e => { m.agenda = e.target.value; autoSave(); });
+  document.getElementById('wr-add-btn').addEventListener('click', addWRItem);
+  document.getElementById('wr-input').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addWRItem(); } });
+
+  document.querySelectorAll('.wr-done-btn').forEach(el => {
+    el.addEventListener('click', () => {
+      m.items[+el.dataset.idx].done = !m.items[+el.dataset.idx].done;
+      autoSave(); renderEditor();
+    });
+  });
+  document.querySelectorAll('.wr-del-btn').forEach(el => {
+    el.addEventListener('click', () => {
+      if (confirm('Удалить?')) { m.items.splice(+el.dataset.idx, 1); wrEditingIdx = null; autoSave(); renderEditor(); }
+    });
+  });
+  document.querySelectorAll('.wr-edit-btn').forEach(el => {
+    el.addEventListener('click', () => {
+      wrEditingIdx = +el.dataset.idx;
+      renderEditor();
+      setTimeout(() => document.getElementById('wei-title')?.focus(), 40);
+    });
+  });
+  document.querySelectorAll('.wr-save-edit').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = +el.dataset.idx;
+      const title = document.getElementById('wei-title')?.value.trim();
+      if (!title) return;
+      m.items[idx] = {
+        ...m.items[idx],
+        title,
+        resp:     (document.getElementById('wei-resp')?.value || '').trim(),
+        date:      document.getElementById('wei-date')?.value || '',
+        priority:  document.getElementById('wei-prio')?.value || 'normal',
+        kind:      document.getElementById('wei-kind')?.value || 'task',
+      };
+      wrEditingIdx = null;
+      autoSave(); renderEditor();
+    });
+  });
+  document.querySelectorAll('.wr-cancel-edit').forEach(el => {
+    el.addEventListener('click', () => { wrEditingIdx = null; renderEditor(); });
+  });
+  // save on Enter in edit title
+  const weiTitle = document.getElementById('wei-title');
+  if (weiTitle) {
+    weiTitle.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); document.querySelector('.wr-save-edit')?.click(); }
+      if (e.key === 'Escape') { wrEditingIdx = null; renderEditor(); }
+    });
+  }
+
+  updateBottomBar();
+  if (wrEditingIdx === null) setTimeout(() => document.getElementById('wr-input')?.focus(), 40);
+}
+
+function addWRItem() {
+  const m = currentMeeting(); if (!m) return;
+  const title = (document.getElementById('wr-input')?.value || '').trim();
+  if (!title) { document.getElementById('wr-input')?.focus(); return; }
+  if (!m.items) m.items = [];
+  m.items.push({
+    title,
+    resp:     (document.getElementById('wr-resp')?.value || '').trim(),
+    date:      document.getElementById('wr-date-field')?.value || '',
+    priority:  document.getElementById('wr-prio')?.value || 'normal',
+    kind:      document.getElementById('wr-kind')?.value || 'task',
+    done: false,
+  });
+  document.getElementById('wr-input').value = '';
+  autoSave();
+  renderEditor();
+}
+
+// ── VAN TUAN (sections per person) ────────────────────────────────────────
+function setStatusBadge(m) {
+  const statusEl = document.getElementById('editor-status');
+  if (m.status === 'done') {
+    statusEl.textContent = '✓ Завершена';
+    statusEl.style.cssText = 'background:#e8f8ee;color:#27ae60;border-radius:10px;padding:3px 10px;font-size:11px;font-weight:700';
+  } else {
+    statusEl.textContent = '✏️ Черновик';
+    statusEl.style.cssText = 'background:#fff8e1;color:#f39c12;border-radius:10px;padding:3px 10px;font-size:11px;font-weight:700';
+  }
+}
+
+function renderVT(m) {
+  document.getElementById('editor-toolbar').style.display = '';
+  document.getElementById('bottom-bar').style.display = '';
+  document.getElementById('editor-title').textContent = '👥 1-1 · ' + fmtDateFull(m.date);
+  setStatusBadge(m);
+
+  const finBtn = document.getElementById('btn-finish');
+  finBtn.textContent = m.status === 'done' ? '🔄 Обновить задачи в трекере' : '✓ Завершить — сохранить задачи';
+  finBtn.className = 'btn btn-sm ' + (m.status === 'done' ? 'btn-accent' : 'btn-green');
+
+  // resolve sections for THIS meeting (selected participants)
+  if (!m.vtSections) m.vtSections = [];
+  const sections = m.vtSections;
+
+  // build picker chips HTML
+  const pickerHtml = vtPeople.map(p => {
+    const sel = sections.find(s => s.key === p.key);
+    const style = sel
+      ? `background:${p.color};border-color:${p.color};color:#fff`
+      : `border-color:${p.color};color:var(--text)`;
+    return `<span class="vt-pick-chip ${sel ? 'sel' : ''}" style="${style}" onclick="toggleVTPerson('${p.key}')">
+      ${!sel ? `<span class="vt-chip-dot" style="background:${p.color}"></span>` : '✓ '}
+      ${escHtml(p.label)}
+    </span>`;
+  }).join('');
+
+  // build edit panel HTML
+  const editPanelHtml = `
+    <div class="vt-edit-panel" id="vt-edit-panel" style="display:${vtEditOpen ? 'block' : 'none'}">
+      <div class="vt-edit-hint">Редактирование общего справочника участников</div>
+      <div class="vt-global-list" id="vt-global-list">
+        ${vtPeople.map((p, i) => `
+          <span class="vt-global-item">
+            <span class="vt-chip-dot" style="background:${p.color}"></span>
+            ${escHtml(p.label)}
+            <button class="vt-chip-del" data-pidx="${i}" title="Удалить из справочника">×</button>
+          </span>`).join('')}
+      </div>
+      <div class="vt-add-row">
+        <input class="vt-add-inp" id="vt-add-label" placeholder="Должность / имя…" autocomplete="off">
+        <button class="btn btn-sm btn-accent" id="vt-add-btn">+ Добавить</button>
+      </div>
+    </div>`;
+
+  // body
+  const body = document.getElementById('editor-body');
+  body.innerHTML = `
+    <div class="meta-row">
+      <div class="meta-field" style="max-width:160px">
+        <label>Дата встречи</label>
+        <input type="date" id="m-date" value="${m.date}">
+      </div>
+      <div class="meta-field">
+        <label>Приглашённые / гости</label>
+        <input type="text" id="m-guests" value="${escHtml(m.guests || '')}" placeholder="Имена приглашённых…">
+      </div>
+    </div>
+    <div class="vt-manage-box">
+      <div class="vt-manage-header">
+        <div class="vt-manage-title">👥 Кто на встрече — выберите</div>
+        <button class="vt-edit-toggle" id="vt-edit-toggle">${vtEditOpen ? '✕ Закрыть' : '✏️ Изменить список'}</button>
+      </div>
+      ${editPanelHtml}
+      <div class="vt-picker">${pickerHtml}</div>
+    </div>
+    ${sections.map(s => renderSection(s, m)).join('')}
+  `;
+
+  // listeners
+  document.getElementById('m-date').addEventListener('change', e => {
+    currentMeeting().date = e.target.value;
+    autoSave();
+    document.getElementById('editor-title').textContent = '📅 ' + fmtDateFull(e.target.value);
+    renderList();
+  });
+  document.getElementById('m-guests').addEventListener('input', e => {
+    currentMeeting().guests = e.target.value;
+    autoSave();
+  });
+  document.getElementById('vt-edit-toggle').addEventListener('click', () => {
+    vtEditOpen = !vtEditOpen;
+    renderEditor();
+  });
+
+  // edit panel listeners
+  if (vtEditOpen) {
+    document.getElementById('vt-add-btn').addEventListener('click', () => addVTPerson());
+    document.getElementById('vt-add-label').addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); addVTPerson(); }
+    });
+    document.querySelectorAll('.vt-chip-del').forEach(btn => {
+      btn.addEventListener('click', () => removeVTPerson(parseInt(btn.dataset.pidx)));
+    });
+  }
+
+  document.querySelectorAll('.sec-head').forEach(el => {
+    el.addEventListener('click', () => el.closest('.section').classList.toggle('open'));
+  });
+
+  sections.forEach(s => {
+    const ta = document.getElementById(`notes-${s.key}`);
+    if (ta) ta.addEventListener('input', () => {
+      if (!currentMeeting().sections[s.key]) currentMeeting().sections[s.key] = { notes: '', tasks: [] };
+      currentMeeting().sections[s.key].notes = ta.value;
+      autoSave();
+    });
+    const addBtn = document.getElementById(`add-btn-${s.key}`);
+    if (addBtn) addBtn.addEventListener('click', () => addTask(s.key));
+    const inp = document.getElementById(`t-title-${s.key}`);
+    if (inp) inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); addTask(s.key); }
+    });
+  });
+
+  document.querySelectorAll('.tr-del').forEach(el => {
+    el.addEventListener('click', () => {
+      const { key, idx } = el.dataset;
+      currentMeeting().sections[key].tasks.splice(parseInt(idx), 1);
+      if (vtEditTask?.key === key && vtEditTask?.idx === parseInt(idx)) vtEditTask = null;
+      autoSave(); renderEditor();
+    });
+  });
+
+  document.querySelectorAll('.tr-edit-btn').forEach(el => {
+    el.addEventListener('click', () => {
+      vtEditTask = { key: el.dataset.key, idx: parseInt(el.dataset.idx) };
+      renderEditor();
+    });
+  });
+
+  document.querySelectorAll('.tr-save').forEach(el => {
+    el.addEventListener('click', () => {
+      const { key, idx } = el.dataset;
+      const m = currentMeeting();
+      if (!m.sections[key]) return;
+      m.sections[key].tasks[parseInt(idx)] = {
+        ...m.sections[key].tasks[parseInt(idx)],
+        title:    document.getElementById('tei-title')?.value.trim() || m.sections[key].tasks[parseInt(idx)].title,
+        resp:     document.getElementById('tei-resp')?.value.trim() || '',
+        date:     document.getElementById('tei-date')?.value || '',
+        priority: document.getElementById('tei-prio')?.value || 'normal',
+      };
+      vtEditTask = null;
+      autoSave(); renderEditor();
+    });
+  });
+
+  document.getElementById('tr-cancel')?.addEventListener('click', () => {
+    vtEditTask = null; renderEditor();
+  });
+
+  document.querySelectorAll('.tr-check').forEach(el => {
+    el.addEventListener('change', () => {
+      const { key, idx } = el.dataset;
+      const m = currentMeeting();
+      if (m.sections[key]?.tasks[parseInt(idx)]) {
+        m.sections[key].tasks[parseInt(idx)].done = el.checked;
+        autoSave(); renderEditor();
+      }
+    });
+  });
+
+  updateBottomBar();
+}
+
+function renderSection(s, m) {
+  const data = m.sections[s.key] || { notes: '', tasks: [] };
+  const taskCount = data.tasks.length;
+  const doneCount = data.tasks.filter(t => t.done).length;
+  const open = taskCount > 0 || data.notes;
+
+  const tasksHtml = data.tasks.map((t, i) => {
+    // editing mode
+    if (vtEditTask && vtEditTask.key === s.key && vtEditTask.idx === i) {
+      return `<div class="task-row editing">
+        <input class="tr-e-inp" id="tei-title" value="${escHtml(t.title)}" style="flex:1;min-width:120px" placeholder="Задача…">
+        <input class="tr-e-inp" id="tei-resp" value="${escHtml(t.resp||'')}" style="width:110px" placeholder="Ответственный" list="resp-list">
+        <input class="tr-e-inp" id="tei-date" type="date" value="${t.date||''}" style="width:125px">
+        <select class="tr-e-inp" id="tei-prio" style="width:85px">
+          <option value="normal" ${t.priority!=='hot'&&t.priority!=='low'?'selected':''}>Обычная</option>
+          <option value="hot" ${t.priority==='hot'?'selected':''}>🔥 Горит</option>
+          <option value="low" ${t.priority==='low'?'selected':''}>Низкий</option>
+        </select>
+        <button class="tr-save" data-key="${s.key}" data-idx="${i}">✓ Сохранить</button>
+        <button class="tr-cancel-btn" id="tr-cancel">Отмена</button>
+      </div>`;
+    }
+    // view mode
+    const carriedLabel = t.carried && t.carriedFrom
+      ? `<span class="tr-carried">📌 с ${fmtDate(t.carriedFrom)}</span>` : '';
+    return `<div class="task-row ${t.done ? 'tr-done-row' : ''} ${t.carried && !t.done ? 'tr-carried-row' : ''}">
+      <input type="checkbox" class="tr-check" data-key="${s.key}" data-idx="${i}" ${t.done ? 'checked' : ''} title="${t.done ? 'Выполнено' : 'Отметить выполненным'}">
+      <span class="tr-title" style="${t.done ? 'text-decoration:line-through;color:var(--muted)' : ''}">${escHtml(t.title)}</span>
+      ${carriedLabel}
+      ${t.resp ? `<span class="tr-chip">👤 ${escHtml(t.resp)}</span>` : ''}
+      ${t.date ? `<span class="tr-chip">📅 ${fmtDate(t.date)}</span>` : ''}
+      ${t.priority === 'hot' ? `<span class="tr-hot">🔥</span>` : ''}
+      ${t.done ? `<span style="font-size:11px;color:var(--green);font-weight:700">✓</span>` : ''}
+      <button class="tr-edit-btn" data-key="${s.key}" data-idx="${i}" title="Редактировать">✏️</button>
+      <button class="tr-del" data-key="${s.key}" data-idx="${i}" title="Удалить">×</button>
+    </div>`;
+  }).join('');
+
+  return `<div class="section ${open ? 'open' : ''}" id="sec-${s.key}">
+    <div class="sec-head">
+      <div class="sec-dot" style="background:${s.color}"></div>
+      <div class="sec-label">${s.label}</div>
+      <div class="sec-cnt">${taskCount ? `${doneCount}/${taskCount} выполнено` : ''}</div>
+      <span class="sec-arrow">▶</span>
+    </div>
+    <div class="sec-body">
+      <div class="field-label">Обсудили / повестка</div>
+      <textarea class="notes-area" id="notes-${s.key}" placeholder="Вопросы, темы для обсуждения, принятые решения…">${escHtml(data.notes)}</textarea>
+
+      <div class="field-label" style="margin-top:12px">Задачи</div>
+      <div class="task-rows">${tasksHtml}</div>
+
+      <div class="add-row">
+        <input class="ar-title" id="t-title-${s.key}" placeholder="Новая задача…" autocomplete="off">
+        <input class="ar-resp"  id="t-resp-${s.key}"  placeholder="Ответственный" list="resp-list">
+        <input class="ar-date"  id="t-date-${s.key}"  type="date">
+        <select class="ar-prio" id="t-prio-${s.key}">
+          <option value="normal">Обычная</option>
+          <option value="hot">🔥 Горит</option>
+          <option value="low">Низкий</option>
+        </select>
+        <button class="ar-btn" id="add-btn-${s.key}">+ Добавить</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function addTask(key) {
+  const title = (document.getElementById(`t-title-${key}`)?.value || '').trim();
+  if (!title) { document.getElementById(`t-title-${key}`)?.focus(); return; }
+  currentMeeting().sections[key].tasks.push({
+    title,
+    resp:     (document.getElementById(`t-resp-${key}`)?.value || '').trim(),
+    date:      document.getElementById(`t-date-${key}`)?.value || '',
+    priority:  document.getElementById(`t-prio-${key}`)?.value || 'normal',
+  });
+  autoSave();
+  renderEditor();
+  document.getElementById(`sec-${key}`)?.classList.add('open');
+  setTimeout(() => document.getElementById(`t-title-${key}`)?.focus(), 40);
+}
+
+function updateBottomBar() {
+  const m = currentMeeting(); if (!m) return;
+  let total = 0;
+  if (m.type === 'wr') {
+    total = (m.items || []).filter(i => i.kind !== 'idea').length;
+  } else {
+    (m.vtSections || DEFAULT_SECTIONS).forEach(s => { total += (m.sections?.[s.key]?.tasks || []).length; });
+  }
+  const label = m.type === 'wr' ? 'Weekly Review' : '1-1';
+  const info = document.getElementById('bb-info');
+  if (m.status === 'done') {
+    info.innerHTML = `<span style="color:var(--green);font-weight:600">✓ Завершена</span> · ${total} задач в трекере · ${fmtDateShort(m.savedAt)}`;
+  } else {
+    info.innerHTML = total
+      ? `Готово: <strong>${total} задач</strong> → в трекер с меткой «${label}»`
+      : 'Добавьте задачи — они появятся в трекере после завершения';
+  }
+}
+
+// ── SAVE / FINISH ─────────────────────────────────────────────────────────
+function autoSave() {
+  saveMeetings(meetings);
+  updateBottomBar();
+}
+
+function saveDraft() {
+  autoSave();
+  // brief visual feedback
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.textContent = '✓ Сохранено';
+  setTimeout(() => { btn.textContent = orig; }, 1500);
+}
+
+function finishOrUpdate() {
+  const m = currentMeeting(); if (!m) return;
+  if (m.status === 'done') {
+    showConfirm(
+      'Обновить задачи в трекере?',
+      'Старые задачи этой встречи будут удалены из трекера и заменены текущими.',
+      () => pushToTracker(m, true)
+    );
+  } else {
+    let total = 0;
+    (m.vtSections || DEFAULT_SECTIONS).forEach(s => { total += (m.sections?.[s.key]?.tasks || []).length; });
+    if (total === 0) {
+      showConfirm('Задач нет', 'Вы не добавили задач. Завершить встречу без задач?', () => pushToTracker(m, false));
+    } else {
+      pushToTracker(m, false);
+    }
+  }
+}
+
+function pushToTracker(m, isUpdate) {
+  let trackerTasks = JSON.parse(localStorage.getItem('fz_tasks') || '[]');
+  trackerTasks = trackerTasks.filter(t => t.meetingId !== m.id);
+
+  const dateLabel = m.date
+    ? new Date(m.date + 'T12:00:00').toLocaleDateString('ru', { day: '2-digit', month: '2-digit', year: '2-digit' })
+    : '';
+
+  let total = 0;
+
+  if (m.type === 'wr') {
+    // Weekly Review: flat list → general dept
+    const label = `Weekly Review ${dateLabel}`;
+    (m.items || []).filter(i => i.kind !== 'idea' && !i.done).forEach(t => {
+      trackerTasks.unshift({
+        id: Date.now().toString() + Math.random().toString(36).slice(2),
+        title: t.title, dept: 'general',
+        priority: t.priority || 'normal', resp: t.resp || '',
+        date: t.date || '', source: label, meetingId: m.id,
+        done: false, created: new Date().toISOString(),
+      });
+      total++;
+    });
+  } else {
+    // 1-1: tasks per section → dept per section
+    const label = `1-1 ${dateLabel}`;
+    (m.vtSections || DEFAULT_SECTIONS).forEach(s => {
+      (m.sections?.[s.key]?.tasks || []).forEach(t => {
+        trackerTasks.unshift({
+          id: Date.now().toString() + Math.random().toString(36).slice(2),
+          title: t.title, dept: s.key,
+          priority: t.priority || 'normal', resp: t.resp || '',
+          date: t.date || '', source: label, meetingId: m.id,
+          done: false, created: new Date().toISOString(),
+        });
+        total++;
+      });
+    });
+  }
+
+  localStorage.setItem('fz_tasks', JSON.stringify(trackerTasks));
+  m.status = 'done';
+  m.savedAt = new Date().toISOString();
+  autoSave(); renderList(); renderEditor();
+  showToast(isUpdate ? `Обновлено: ${total} задач в трекере` : `✅ ${total} задач добавлено в трекер`);
+}
+
+// ── VT PARTICIPANT MANAGEMENT ─────────────────────────────────────────────
+// Toggle person in/out of current meeting
+function toggleVTPerson(key) {
+  const m = currentMeeting(); if (!m) return;
+  const idx = m.vtSections.findIndex(s => s.key === key);
+  if (idx >= 0) {
+    // remove from meeting
+    const hasData = (m.sections?.[key]?.tasks || []).length > 0 || (m.sections?.[key]?.notes || '');
+    if (hasData && !confirm(`Убрать участника? Заметки и задачи по нему останутся, но будут скрыты.`)) return;
+    m.vtSections.splice(idx, 1);
+  } else {
+    // add to meeting — pull in open tasks from previous meetings
+    const person = vtPeople.find(p => p.key === key);
+    if (!person) return;
+    m.vtSections.push({ ...person });
+    if (!m.sections) m.sections = {};
+    if (!m.sections[key]) m.sections[key] = { notes: '', tasks: [] };
+
+    const carried = getPrevOpenTasks(key, m.id, m.date);
+    if (carried.length) {
+      // prepend carried tasks (don't duplicate if already there)
+      const existing = m.sections[key].tasks.map(t => t.title);
+      const toAdd = carried.filter(t => !existing.includes(t.title));
+      m.sections[key].tasks = [...toAdd, ...m.sections[key].tasks];
+      showToast(`📌 Добавлено ${toAdd.length} незакрытых задач из предыдущих встреч`);
+    }
+  }
+  autoSave();
+  renderEditor();
+}
+
+// Collect uncompleted tasks for a section key from past meetings
+function getPrevOpenTasks(key, currentId, currentDate) {
+  const seen = new Set();
+  const result = [];
+  // sort past meetings newest-first so we get most recent context
+  const past = meetings
+    .filter(m => m.id !== currentId && m.type === 'vt' && m.date && m.date <= (currentDate || '9999'))
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  for (const pm of past) {
+    const tasks = pm.sections?.[key]?.tasks || [];
+    for (const t of tasks) {
+      if (!t.done && !seen.has(t.title)) {
+        seen.add(t.title);
+        result.push({ ...t, carried: true, carriedFrom: pm.date, done: false });
+      }
+    }
+  }
+  return result;
+}
+
+// Add new person to global directory
+function addVTPerson() {
+  const inp = document.getElementById('vt-add-label');
+  const label = (inp?.value || '').trim();
+  if (!label) { inp?.focus(); return; }
+  const key = 'p_' + Date.now();
+  const color = SECTION_PALETTE[vtPeople.length % SECTION_PALETTE.length];
+  vtPeople.push({ key, label, color });
+  saveVTPeople();
+  renderEditor();
+}
+
+// Remove person from global directory
+function removeVTPerson(idx) {
+  const person = vtPeople[idx];
+  if (!person) return;
+  if (!confirm(`Удалить «${person.label}» из справочника? Данные в уже созданных встречах сохранятся.`)) return;
+  vtPeople.splice(idx, 1);
+  saveVTPeople();
+  renderEditor();
+}
+
+// ── LIST ──────────────────────────────────────────────────────────────────
+function renderList() {
+  renderMiniCal();
+  const q = (document.getElementById('sidebar-search')?.value || '').toLowerCase();
+  const list = document.getElementById('meetings-list');
+  const filtered = meetings.filter(m =>
+    m.type === newType &&
+    (!q || fmtDateFull(m.date).toLowerCase().includes(q) || (m.guests||'').toLowerCase().includes(q))
+  );
+  if (!filtered.length) {
+    list.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Нет встреч</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(m => {
+    let total = 0;
+    if (m.type === 'wr') total = (m.items || []).filter(i => i.kind !== 'idea').length;
+    else (m.vtSections || DEFAULT_SECTIONS).forEach(s => { total += (m.sections?.[s.key]?.tasks || []).length; });
+    const typeIcon = m.type === 'wr' ? '📋' : '👥';
+    const typeName = m.type === 'wr' ? 'Weekly Review' : '1-1';
+    return `<div class="meeting-card ${m.id === currentId ? 'active' : ''}" onclick="openMeeting('${m.id}')">
+      <div class="mc-date">${typeIcon} ${typeName}</div>
+      <div class="mc-guests">${fmtDateFull(m.date)}</div>
+      ${m.guests ? `<div class="mc-guests">+ ${escHtml(m.guests)}</div>` : ''}
+      <div class="mc-meta">
+        <span class="mc-badge ${m.status === 'done' ? 'badge-done' : 'badge-draft'}">${m.status === 'done' ? '✓ Готова' : '✏️ Черновик'}</span>
+        ${total ? `<span class="mc-tasks">${total} задач</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showEmpty() {
+  document.getElementById('editor-toolbar').style.display = 'none';
+  document.getElementById('bottom-bar').style.display = 'none';
+  document.getElementById('editor-body').innerHTML = `
+    <div class="empty-state">
+      <div class="emoji">📋</div>
+      <h2>Weekly Review</h2>
+      <p>Выберите встречу из списка или создайте новую, указав дату и нажав «Создать»</p>
+    </div>`;
+}
+
+// ── CONFIRM MODAL ─────────────────────────────────────────────────────────
+let confirmCallback = null;
+function showConfirm(title, text, cb) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-text').textContent = text;
+  confirmCallback = cb;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+function closeConfirm() { document.getElementById('confirm-modal').classList.remove('open'); confirmCallback = null; }
+document.getElementById('confirm-ok').addEventListener('click', () => { const cb = confirmCallback; closeConfirm(); cb && cb(); });
+
+// ── TOAST ─────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1a1d23;color:#fff;border-radius:10px;padding:12px 20px;font-size:13px;font-weight:600;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.25)';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ── SHARE ─────────────────────────────────────────────────────────────────
+function shareAgenda() {
+  const m = currentMeeting(); if (!m) return;
+  const payload = {
+    type: m.type, date: m.date, guests: m.guests || '',
+    agenda: m.agenda || '',
+    items: (m.items || []).map(i => ({ title: i.title, resp: i.resp, date: i.date, priority: i.priority, kind: i.kind })),
+    status: m.status,
+  };
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  const url = window.location.href.split('#')[0] + '#view=' + encoded;
+  navigator.clipboard.writeText(url).then(() => {
+    showToast('🔗 Ссылка скопирована! Участники откроют в браузере.');
+  }).catch(() => {
+    // fallback: show in prompt
+    prompt('Скопируйте ссылку:', url);
+  });
+}
+
+function checkShareView() {
+  const hash = window.location.hash;
+  if (!hash.startsWith('#view=')) return false;
+  try {
+    const data = JSON.parse(decodeURIComponent(escape(atob(hash.slice(6)))));
+    renderShareView(data);
+    return true;
+  } catch(e) { return false; }
+}
+
+function renderShareView(data) {
+  document.querySelector('.header').style.display = 'none';
+  document.querySelector('.body').style.display = 'none';
+  document.body.style.background = '#fff';
+
+  const dateStr = data.date ? new Date(data.date + 'T12:00:00').toLocaleDateString('ru', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '—';
+  const typeLabel = data.type === 'wr' ? 'Weekly Review' : '1-1';
+
+  const itemsHtml = (data.items || []).length ? (data.items || []).map((item, i) => {
+    const metaParts = [];
+    if (item.resp) metaParts.push('👤 ' + escHtml(item.resp));
+    if (item.date) metaParts.push('📅 ' + fmtDate(item.date));
+    return `<div class="sv-item">
+      <span class="sv-num">${i + 1}.</span>
+      <div class="sv-item-body">
+        ${item.kind === 'idea' ? '<span class="sv-badge sv-idea">💡 Идея</span>' : ''}
+        ${item.priority === 'hot' ? '<span class="sv-badge sv-hot">🔥 Горит</span>' : ''}
+        ${escHtml(item.title)}
+        ${metaParts.length ? `<div class="sv-item-meta">${metaParts.join(' · ')}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('') : '<div style="color:#aaa;font-size:13px">Задачи не добавлены</div>';
+
+  const div = document.createElement('div');
+  div.className = 'share-view';
+  div.innerHTML = `
+    <span class="sv-back" onclick="window.location.hash='';location.reload()">← Назад</span>
+    <div class="sv-header">
+      <div class="sv-logo">🏭 Фуд Завод · ${typeLabel}</div>
+      <div class="sv-title">${dateStr}</div>
+      ${data.guests ? `<div class="sv-meta">Участники: ${escHtml(data.guests)}</div>` : ''}
+    </div>
+
+    ${data.agenda ? `<div class="sv-section">
+      <h2>📋 Повестка / темы для обсуждения</h2>
+      <div class="sv-agenda">${escHtml(data.agenda)}</div>
+    </div>` : ''}
+
+    ${(data.items||[]).length ? `<div class="sv-section">
+      <h2>Задачи и идеи встречи</h2>
+      ${itemsHtml}
+    </div>` : ''}
+
+    <div class="sv-watermark">Фуд Завод · Трекер встреч · Режим просмотра</div>
+  `;
+  document.body.appendChild(div);
+}
+
+// ── SPRINT ────────────────────────────────────────────────────────────────
+let sprintWeek = getWeekStr(new Date());
+
+function getWeekStr(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dow = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dow);
+  const y1 = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const wk = Math.ceil((((date - y1) / 86400000) + 1) / 7);
+  return `${date.getUTCFullYear()}-W${String(wk).padStart(2,'0')}`;
+}
+
+function weekMon(weekStr) {
+  const [yr, wn] = weekStr.split('-W');
+  const jan4 = new Date(parseInt(yr), 0, 4);
+  const dow = jan4.getDay() || 7;
+  const mon = new Date(jan4);
+  mon.setDate(jan4.getDate() - dow + 1 + (parseInt(wn) - 1) * 7);
+  return mon;
+}
+
+function weekLabel(weekStr) {
+  const mon = weekMon(weekStr);
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  const fmt = d => d.toLocaleDateString('ru', { day:'numeric', month:'long' });
+  return `${fmt(mon)} — ${fmt(sun)}`;
+}
+
+function offsetWeek(ws, n) {
+  const mon = weekMon(ws);
+  mon.setDate(mon.getDate() + n * 7);
+  return getWeekStr(mon);
+}
+
+function openSprint() {
+  document.getElementById('sprint-overlay').classList.add('open');
+  renderSprint();
+}
+function closeSprint() {
+  document.getElementById('sprint-overlay').classList.remove('open');
+}
+function sprintPrevWeek() { sprintWeek = offsetWeek(sprintWeek, -1); renderSprint(); }
+function sprintNextWeek() { sprintWeek = offsetWeek(sprintWeek, +1); renderSprint(); }
+
+function getSprintTasks() { return JSON.parse(localStorage.getItem('fz_tasks') || '[]'); }
+function saveSprintTasks(t) { localStorage.setItem('fz_tasks', JSON.stringify(t)); }
+
+function renderSprint() {
+  document.getElementById('sprint-week-lbl').textContent = weekLabel(sprintWeek);
+  const allTasks = getSprintTasks();
+  const body = document.getElementById('sprint-body');
+  if (!body) return;
+
+  body.innerHTML = vtPeople.map(p => {
+    const inSprint = allTasks.filter(t => t.resp === p.label && t.sprint && t.sprintWeek === sprintWeek);
+    const backlog  = allTasks.filter(t => t.resp === p.label && !t.done && !(t.sprint && t.sprintWeek === sprintWeek));
+    const doneCount = inSprint.filter(t => t.done).length;
+
+    const sprintRows = inSprint.map(t => `
+      <div class="spr-task-row ${t.done ? 'spr-done' : ''}">
+        <input type="checkbox" class="spr-chk" ${t.done?'checked':''} data-sid="${escHtml(t.id)}">
+        <span class="spr-ttl ${t.done?'spr-done-txt':''}">${escHtml(t.title)}</span>
+        ${t.priority==='hot'?'<span class="spr-badge">🔥</span>':''}
+        ${t.source?`<span class="spr-badge">${escHtml(t.source)}</span>`:''}
+        <button class="spr-rm" data-sid="${escHtml(t.id)}" title="Убрать из спринта">×</button>
+      </div>`).join('');
+
+    const backlogRows = backlog.map(t => `
+      <div class="spr-bl-row">
+        <button class="spr-bl-add" data-sid="${escHtml(t.id)}">⚡ В спринт</button>
+        <span>${escHtml(t.title)}</span>
+        ${t.source?`<span class="spr-badge">${escHtml(t.source)}</span>`:''}
+      </div>`).join('');
+
+    return `<div class="spr-card" data-pkey="${p.key}" data-plabel="${escHtml(p.label)}">
+      <div class="spr-card-head">
+        <span class="spr-person-dot" style="background:${p.color}"></span>
+        <span class="spr-person-name">${escHtml(p.label)}</span>
+        <span class="spr-count">${inSprint.length ? `${doneCount}/${inSprint.length} в спринте` : ''}</span>
+        <button class="spr-new-btn" data-pk="${p.key}" data-pl="${escHtml(p.label)}">+ Задача</button>
+      </div>
+      ${inSprint.length
+        ? `<div class="spr-tasks">${sprintRows}</div>`
+        : `<div class="spr-empty-msg">Нет задач в спринте — добавьте из бэклога или создайте новую</div>`}
+      <div class="spr-add-form" style="display:none" id="spr-form-${p.key}">
+        <input class="spr-add-inp" id="spr-inp-${p.key}" placeholder="Название задачи…">
+        <button class="spr-add-ok" data-pk="${p.key}" data-pl="${escHtml(p.label)}">Добавить</button>
+      </div>
+      ${backlog.length ? `<details class="spr-backlog">
+        <summary>Бэклог: ${backlog.length} задач</summary>
+        <div class="spr-backlog-list">${backlogRows}</div>
+      </details>` : ''}
+    </div>`;
+  }).join('');
+
+  // ── listeners ──
+  body.querySelectorAll('.spr-chk').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const ts = getSprintTasks();
+      const t = ts.find(x => x.id === cb.dataset.sid);
+      if (t) { t.done = cb.checked; saveSprintTasks(ts); }
+      renderSprint();
+    });
+  });
+  body.querySelectorAll('.spr-rm').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ts = getSprintTasks();
+      const t = ts.find(x => x.id === btn.dataset.sid);
+      if (t) { t.sprint = false; saveSprintTasks(ts); }
+      renderSprint();
+    });
+  });
+  body.querySelectorAll('.spr-bl-add').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ts = getSprintTasks();
+      const t = ts.find(x => x.id === btn.dataset.sid);
+      if (t) { t.sprint = true; t.sprintWeek = sprintWeek; saveSprintTasks(ts); }
+      renderSprint();
+    });
+  });
+  body.querySelectorAll('.spr-new-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const form = document.getElementById(`spr-form-${btn.dataset.pk}`);
+      if (form) { form.style.display = form.style.display === 'none' ? 'flex' : 'none'; form.querySelector('input')?.focus(); }
+    });
+  });
+  body.querySelectorAll('.spr-add-ok').forEach(btn => {
+    btn.addEventListener('click', () => sprintAddTask(btn.dataset.pk, btn.dataset.pl));
+  });
+  body.querySelectorAll('.spr-add-inp').forEach(inp => {
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const card = inp.closest('.spr-card');
+        sprintAddTask(card.dataset.pkey, card.dataset.plabel);
+      }
+    });
+  });
+}
+
+function sprintAddTask(pkey, plabel) {
+  const inp = document.getElementById(`spr-inp-${pkey}`);
+  const title = (inp?.value || '').trim();
+  if (!title) { inp?.focus(); return; }
+  const ts = getSprintTasks();
+  ts.unshift({
+    id: Date.now().toString() + Math.random().toString(36).slice(2),
+    title, dept: pkey, priority: 'normal', resp: plabel,
+    date: '', source: 'Спринт', meetingId: null,
+    done: false, sprint: true, sprintWeek: sprintWeek,
+    created: new Date().toISOString(),
+  });
+  saveSprintTasks(ts);
+  renderSprint();
+}
+
+// ── RESPONSIBLE DATALIST ──────────────────────────────────────────────────
+function updateRespList() {
+  const dl = document.getElementById('resp-list');
+  if (!dl) return;
+  dl.innerHTML = vtPeople.map(p => `<option value="${escHtml(p.label)}">`).join('');
+}
+
+// ── REPORT ────────────────────────────────────────────────────────────────
+function openReport() {
+  // populate person select
+  const sel = document.getElementById('rpt-person');
+  sel.innerHTML = '<option value="">— Выберите участника —</option>' +
+    vtPeople.map(p => `<option value="${escHtml(p.key)}">${escHtml(p.label)}</option>`).join('');
+  document.getElementById('report-overlay').classList.add('open');
+  renderReport();
+}
+function closeReport() {
+  document.getElementById('report-overlay').classList.remove('open');
+}
+
+function renderReport() {
+  const personKey = document.getElementById('rpt-person').value;
+  const filter    = document.getElementById('rpt-filter').value;
+  const typeF     = document.getElementById('rpt-type').value;
+  const body      = document.getElementById('rpt-body');
+
+  if (!personKey) {
+    body.innerHTML = '<div class="rpt-empty">Выберите участника для просмотра задач</div>';
+    document.getElementById('rpt-stat').textContent = '';
+    return;
+  }
+
+  const person = vtPeople.find(p => p.key === personKey);
+  const personLabel = person?.label || personKey;
+
+  // collect all tasks for this person across all meetings
+  const rows = [];
+
+  // from VT meetings (section tasks)
+  meetings
+    .filter(m => m.type === 'vt' && (typeF === 'all' || typeF === 'vt'))
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+    .forEach(m => {
+      const tasks = m.sections?.[personKey]?.tasks || [];
+      tasks.forEach(t => {
+        rows.push({ ...t, fromDate: m.date, fromType: 'vt', fromId: m.id });
+      });
+    });
+
+  // from WR meetings (items where resp matches)
+  meetings
+    .filter(m => m.type === 'wr' && (typeF === 'all' || typeF === 'wr'))
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+    .forEach(m => {
+      (m.items || []).filter(i => i.kind !== 'idea' && i.resp && i.resp === personLabel).forEach(t => {
+        rows.push({ ...t, fromDate: m.date, fromType: 'wr', fromId: m.id });
+      });
+    });
+
+  // apply filter
+  const visible = rows.filter(r => {
+    if (filter === 'open') return !r.done;
+    if (filter === 'done') return !!r.done;
+    return true;
+  });
+
+  const total = rows.length;
+  const done  = rows.filter(r => r.done).length;
+  document.getElementById('rpt-stat').textContent = `${done} из ${total} выполнено`;
+
+  if (!visible.length) {
+    body.innerHTML = `<div class="rpt-empty">Нет задач${filter !== 'all' ? ' с таким фильтром' : ''}</div>`;
+    return;
+  }
+
+  // group by date
+  const byDate = {};
+  visible.forEach(r => {
+    const k = r.fromDate || '—';
+    if (!byDate[k]) byDate[k] = [];
+    byDate[k].push(r);
+  });
+
+  body.innerHTML = Object.keys(byDate).sort((a,b) => b.localeCompare(a)).map(date => {
+    const typeIcon = byDate[date][0].fromType === 'wr' ? '📋 Weekly Review' : '👥 1-1';
+    const dateLabel = date !== '—' ? fmtDateFull(date) : '—';
+    const rowsHtml = byDate[date].map((r, ri) => `
+      <div class="rpt-row ${r.done ? 'done-row' : ''}">
+        <input type="checkbox" class="rpt-check" ${r.done ? 'checked' : ''}
+          data-key="${escHtml(personKey)}" data-mid="${r.fromId}" data-type="${r.fromType}"
+          data-title="${escHtml(r.title)}" title="${r.done ? 'Выполнено' : 'Отметить выполненным'}">
+        <span class="rpt-title ${r.done ? 'done-txt' : ''}">${escHtml(r.title)}</span>
+        ${r.priority === 'hot' ? '<span class="rpt-chip">🔥</span>' : ''}
+        ${r.date ? `<span class="rpt-chip">📅 ${fmtDate(r.date)}</span>` : ''}
+        ${r.done ? '<span style="font-size:11px;color:var(--green);font-weight:700">✓</span>' : '<span style="font-size:11px;color:#e67e22;font-weight:700">●</span>'}
+      </div>`).join('');
+    return `<div class="rpt-group">
+      <div class="rpt-group-title">${typeIcon} · ${dateLabel}</div>
+      ${rowsHtml}
+    </div>`;
+  }).join('');
+
+  // checkboxes in report update the source meeting
+  document.querySelectorAll('.rpt-check').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const { mid, type: mtype, key, title } = cb.dataset;
+      const m = meetings.find(x => x.id === mid);
+      if (!m) return;
+      if (mtype === 'vt') {
+        const tasks = m.sections?.[key]?.tasks || [];
+        const t = tasks.find(t => t.title === title);
+        if (t) t.done = cb.checked;
+      } else {
+        const item = (m.items || []).find(i => i.title === title);
+        if (item) item.done = cb.checked;
+      }
+      saveMeetings(meetings);
+      renderReport();
+      if (currentId === mid) renderEditor();
+    });
+  });
+}
+
+// ── MINI CALENDAR ─────────────────────────────────────────────────────────
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+
+function p2(n) { return n < 10 ? '0' + n : String(n); }
+function isoDateOf(d) { return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`; }
+
+function renderMiniCal() {
+  const el = document.getElementById('mini-cal');
+  if (!el) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const mtgDates = new Set(meetings.map(m => m.date));
+
+  const first = new Date(calYear, calMonth, 1);
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const monthLabel = first.toLocaleDateString('ru', { month: 'long', year: 'numeric' });
+
+  let dow = first.getDay(); // 0=Sun
+  dow = dow === 0 ? 6 : dow - 1; // Mon-based
+
+  const cells = [];
+  for (let i = dow - 1; i >= 0; i--) {
+    const d = new Date(calYear, calMonth, -i);
+    cells.push({ ds: isoDateOf(d), n: d.getDate(), cur: false });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ ds: `${calYear}-${p2(calMonth+1)}-${p2(d)}`, n: d, cur: true });
+  }
+  const fill = (7 - cells.length % 7) % 7;
+  for (let i = 1; i <= fill; i++) {
+    const d = new Date(calYear, calMonth + 1, i);
+    cells.push({ ds: isoDateOf(d), n: d.getDate(), cur: false });
+  }
+
+  const grid = cells.map(c => {
+    const has = mtgDates.has(c.ds);
+    const isT = c.ds === today;
+    const cls = ['cal-day', c.cur ? 'in-month' : 'out-month', has ? 'has-mtg' : '', isT ? 'is-today' : ''].filter(Boolean).join(' ');
+    const click = c.cur ? (has ? `calClick('${c.ds}')` : `calSet('${c.ds}')`) : '';
+    return `<div class="${cls}" ${click ? `onclick="${click}"` : ''} title="${c.ds}">${c.n}</div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="cal-nav">
+      <button class="cal-btn" onclick="calPrev()">‹</button>
+      <div class="cal-month">${monthLabel.charAt(0).toUpperCase()+monthLabel.slice(1)}</div>
+      <button class="cal-btn" onclick="calNext()">›</button>
+    </div>
+    <div class="cal-grid">
+      <div class="cal-dow">Пн</div><div class="cal-dow">Вт</div><div class="cal-dow">Ср</div>
+      <div class="cal-dow">Чт</div><div class="cal-dow">Пт</div><div class="cal-dow">Сб</div><div class="cal-dow">Вс</div>
+      ${grid}
+    </div>`;
+}
+
+function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderMiniCal(); }
+function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderMiniCal(); }
+function calClick(date) { const m = meetings.find(x => x.date === date); if (m) openMeeting(m.id); }
+function calSet(date) { document.getElementById('new-date').value = date; }
+
+// ── UTILS ─────────────────────────────────────────────────────────────────
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+function fmtDateFull(d) {
+  if (!d) return '—';
+  return new Date(d + 'T12:00:00').toLocaleDateString('ru', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+}
+function fmtDate(d) {
+  return d ? new Date(d + 'T12:00:00').toLocaleDateString('ru', { day: '2-digit', month: '2-digit' }) : '';
+}
+function fmtDateShort(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('ru', { day: '2-digit', month: '2-digit', year: '2-digit' });
+}
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+if (!checkShareView()) {
+  updateRespList();
+  document.getElementById('new-date').value = todayStr();
+  renderList();
+  if (meetings.length) openMeeting(meetings[0].id);
+}
+</script>
+</body>
+</html>
