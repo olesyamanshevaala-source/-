@@ -426,6 +426,8 @@ body {
   .add-row { display: none; }
 }
 </style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -540,6 +542,85 @@ body {
 </div>
 
 <script>
+// ── FIREBASE ──────────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDnZmarmdfDqj3axIkSIz2WyMTjupl-UP4",
+  authDomain: "food-zavod.firebaseapp.com",
+  databaseURL: "https://food-zavod-default-rtdb.firebaseio.com",
+  projectId: "food-zavod",
+  storageBucket: "food-zavod.firebasestorage.app",
+  messagingSenderId: "125779060281",
+  appId: "1:125779060281:web:1f310e04004842387e8fe8",
+  measurementId: "G-V4HBK0KT3B"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+function fbSet(key, value) {
+  db.ref(key).set(JSON.stringify(value)).catch(e => console.warn('FB write:', e));
+}
+
+function startFbListeners() {
+  let first = { meetings: true, tasks: true, people: true };
+
+  db.ref('fz_meetings').on('value', snap => {
+    const raw = snap.val();
+    if (first.meetings) {
+      first.meetings = false;
+      if (raw === null && meetings.length > 0) { fbSet('fz_meetings', meetings); return; }
+      if (raw !== null) {
+        meetings = JSON.parse(raw);
+        localStorage.setItem('fz_meetings', raw);
+        renderList(); renderMiniCal();
+        if (meetings.length && !currentId) openMeeting(meetings[0].id);
+        else if (currentId) renderEditor();
+      }
+      return;
+    }
+    if (raw === null) return;
+    const incoming = JSON.parse(raw);
+    if (JSON.stringify(incoming) === JSON.stringify(meetings)) return;
+    meetings = incoming;
+    localStorage.setItem('fz_meetings', raw);
+    renderList(); renderMiniCal();
+    if (currentId && !meetings.find(m => m.id === currentId)) { currentId = null; showEmpty(); }
+    else if (currentId) renderEditor();
+    showToast('🔄 Данные синхронизированы');
+  });
+
+  db.ref('fz_tasks').on('value', snap => {
+    const raw = snap.val();
+    if (first.tasks) {
+      first.tasks = false;
+      if (raw === null) { const local = localStorage.getItem('fz_tasks'); if (local && local !== '[]') fbSet('fz_tasks', JSON.parse(local)); return; }
+      localStorage.setItem('fz_tasks', raw); return;
+    }
+    if (raw === null) return;
+    if (raw === localStorage.getItem('fz_tasks')) return;
+    localStorage.setItem('fz_tasks', raw);
+    const sp = document.getElementById('sprint-overlay');
+    if (sp && sp.classList.contains('open')) renderSprint();
+  });
+
+  db.ref('fz_vt_people').on('value', snap => {
+    const raw = snap.val();
+    if (first.people) {
+      first.people = false;
+      if (raw === null && vtPeople.length > 0) { fbSet('fz_vt_people', vtPeople); return; }
+      if (raw !== null) { vtPeople = JSON.parse(raw); localStorage.setItem('fz_vt_people', raw); updateRespList(); }
+      return;
+    }
+    if (raw === null) return;
+    const remote = JSON.parse(raw);
+    if (JSON.stringify(remote) === JSON.stringify(vtPeople)) return;
+    vtPeople = remote;
+    localStorage.setItem('fz_vt_people', raw);
+    updateRespList();
+    if (currentId) renderEditor();
+  });
+}
+// ─────────────────────────────────────────────────────────────────────────
+
 // ── CONFIG ────────────────────────────────────────────────────────────────
 const DEFAULT_SECTIONS = [
   { key: 'production', label: 'Директор по производству',        color: '#f39c12' },
@@ -576,6 +657,7 @@ function loadVTPeople() {
 function saveVTPeople() {
   localStorage.setItem('fz_vt_people', JSON.stringify(vtPeople));
   localStorage.setItem('fz_vt_people_ver', String(VT_PEOPLE_VER));
+  fbSet('fz_vt_people', vtPeople);
   updateRespList();
 }
 let vtPeople = loadVTPeople();
@@ -583,7 +665,7 @@ let vtEditOpen = false;
 
 // ── STORAGE ───────────────────────────────────────────────────────────────
 function loadMeetings() { return JSON.parse(localStorage.getItem('fz_meetings') || '[]'); }
-function saveMeetings(m) { localStorage.setItem('fz_meetings', JSON.stringify(m)); }
+function saveMeetings(m) { localStorage.setItem('fz_meetings', JSON.stringify(m)); fbSet('fz_meetings', m); }
 
 // migrate old fz_reviews if any
 (function migrate() {
@@ -1207,6 +1289,7 @@ function pushToTracker(m, isUpdate) {
   }
 
   localStorage.setItem('fz_tasks', JSON.stringify(trackerTasks));
+  fbSet('fz_tasks', trackerTasks);
   m.status = 'done';
   m.savedAt = new Date().toISOString();
   autoSave(); renderList(); renderEditor();
@@ -1471,7 +1554,7 @@ function sprintPrevWeek() { sprintWeek = offsetWeek(sprintWeek, -1); renderSprin
 function sprintNextWeek() { sprintWeek = offsetWeek(sprintWeek, +1); renderSprint(); }
 
 function getSprintTasks() { return JSON.parse(localStorage.getItem('fz_tasks') || '[]'); }
-function saveSprintTasks(t) { localStorage.setItem('fz_tasks', JSON.stringify(t)); }
+function saveSprintTasks(t) { localStorage.setItem('fz_tasks', JSON.stringify(t)); fbSet('fz_tasks', t); }
 
 function renderSprint() {
   document.getElementById('sprint-week-lbl').textContent = weekLabel(sprintWeek);
@@ -1788,6 +1871,7 @@ if (!checkShareView()) {
   document.getElementById('new-date').value = todayStr();
   renderList();
   if (meetings.length) openMeeting(meetings[0].id);
+  startFbListeners(); // sync with Firebase
 }
 </script>
 </body>
