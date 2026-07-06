@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Фуд Завод — Трекер встреч</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -480,6 +481,8 @@ body {
 .tasktab-row-del:hover { color:var(--hot); }
 .tasktab-sprint-btn { background:none; border:1px solid var(--accent); border-radius:6px; color:var(--accent); font-size:10px; font-weight:700; cursor:pointer; padding:2px 7px; white-space:nowrap; }
 .tasktab-sprint-btn:hover { background:var(--accent); color:#fff; }
+.tasktab-edit-btn { background:none; border:none; color:#bbb; cursor:pointer; font-size:14px; padding:0 3px; }
+.tasktab-edit-btn:hover { color:var(--accent); }
 .tasktab-empty { text-align:center; color:var(--muted); font-size:13px; padding:40px 0; }
 
 /* ── REPORT MODAL ── */
@@ -505,6 +508,103 @@ body {
 .rpt-empty { color:var(--muted); font-size:13px; text-align:center; padding:30px 0; }
 .report-stat { font-size:12px; color:var(--muted); margin-left:auto; }
 
+/* ── MOBILE BURGER & MENU ── */
+.mobile-burger { display:none; background:rgba(255,255,255,.15); border:none; color:#fff; font-size:20px; border-radius:8px; width:38px; height:38px; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+.mobile-burger:hover { background:rgba(255,255,255,.28); }
+.mob-sidebar-btn { margin-right:4px; font-size:18px; }
+.mobile-menu { display:none; position:fixed; top:52px; left:0; right:0; background:var(--accent); z-index:190; padding:8px 14px 14px; flex-direction:column; gap:3px; box-shadow:0 8px 24px rgba(0,0,0,.3); }
+.mobile-menu.open { display:flex; }
+.mobile-menu .btn { text-align:left; padding:12px 14px; font-size:14px; width:100%; border-radius:9px; }
+.mob-backdrop { display:none; position:fixed; inset:0; top:52px; background:rgba(0,0,0,.45); z-index:155; }
+.mob-backdrop.open { display:block; }
+
+/* ── RESPONSIVE: TABLET + PHONE ── */
+@media (max-width: 768px) {
+  /* Header */
+  .header { padding:0 14px; }
+  .logo small { display:none; }
+  .header-right { display:none !important; }
+  .mobile-burger { display:flex; }
+  .mobile-burger:last-of-type { margin-left:auto; }
+
+  /* Body: single column */
+  .body { flex-direction:column; position:relative; overflow:hidden; }
+
+  /* Sidebar: slide-in panel */
+  .sidebar {
+    position:fixed; top:52px; left:-100%; width:88vw; max-width:320px;
+    height:calc(var(--vh,1vh)*100 - 52px); z-index:160; transition:left .25s ease;
+    box-shadow:6px 0 24px rgba(0,0,0,.22); flex-shrink:0;
+  }
+  .sidebar.mob-open { left:0; }
+
+  /* Editor */
+  .editor { width:100%; min-width:0; }
+  .editor-body { padding:14px 15px; }
+  .editor-toolbar { padding:10px 14px; gap:8px; flex-wrap:wrap; }
+  .editor-title { font-size:13.5px; }
+  .bottom-bar { padding:10px 14px; gap:7px; flex-wrap:wrap; }
+
+  /* Overlays: full screen */
+  .sprint-overlay, .notes-overlay, .report-overlay, .tasktab-overlay {
+    padding:0; align-items:stretch; justify-content:stretch;
+  }
+  .sf-overlay { padding:0; align-items:flex-start; justify-content:stretch; }
+  .sprint-modal, .notes-modal, .report-modal, .tasktab-modal {
+    width:100%; max-width:100%; border-radius:0; height:100vh; max-height:100vh; margin:0;
+  }
+  .sf-modal { width:100%; max-width:100%; border-radius:0; margin:0; }
+  .sf-body { max-height:calc(var(--vh,1vh)*100 - 60px); }
+  .notes-modal { height:auto; min-height:60vh; max-height:100vh; }
+
+  /* Sprint week nav smaller */
+  .sprint-week-lbl { font-size:11px; min-width:140px; }
+  .sprint-head h2 { font-size:14px; }
+
+  /* WR editor: stack add form */
+  .wr-wrap { padding:14px 15px; }
+  .wr-meta { flex-direction:column; gap:10px; }
+  .wr-fast-add { flex-wrap:wrap; gap:6px; padding:10px 12px; }
+  .wr-fast-input { width:100%; font-size:14px; }
+  .wr-fast-resp, .wr-fast-date { flex:1; min-width:120px; }
+  .wr-fast-prio { min-width:100px; }
+  .wr-add-btn { width:100%; margin-top:2px; padding:10px; }
+
+  /* Meta row stack */
+  .meta-row { flex-direction:column; gap:10px; }
+
+  /* Report filters stack */
+  .report-filters { flex-direction:column; align-items:stretch; }
+  .report-select { width:100%; }
+  .report-modal { border-radius:0; height:100vh; max-height:100vh; }
+
+  /* Task tab head */
+  .tasktab-head { flex-wrap:wrap; gap:8px; }
+  .tasktab-person-sel { width:100%; order:3; flex:none; }
+  .tasktab-head h2 { flex:1; }
+  .tasktab-add-row { padding:10px 14px; }
+
+  /* VT manage */
+  .vt-picker { gap:5px; }
+  .vt-pick-chip { font-size:11.5px; padding:4px 10px 4px 8px; }
+
+  /* Bigger touch targets */
+  .btn { min-height:40px; }
+  .spr-chk, .notes-chk, .rpt-check, .tr-check { width:18px; height:18px; }
+  .spr-rm, .notes-task-del, .sf-item-del, .tasktab-row-del { font-size:18px; padding:4px 6px; }
+
+  /* Section cards full width */
+  .section { border-radius:9px; }
+
+  /* Sidebar mini-cal */
+  .mini-cal { display:none; }
+}
+
+@media (max-width: 400px) {
+  .sprint-week-lbl { font-size:10px; min-width:110px; }
+  .logo { font-size:14px; }
+}
+
 @media print {
   .sidebar, .editor-toolbar, .bottom-bar, .header { display: none !important; }
   .editor-body { padding: 0; overflow: visible; }
@@ -520,6 +620,7 @@ body {
 <datalist id="resp-list"></datalist>
 
 <div class="header">
+  <button class="mobile-burger mob-sidebar-btn" onclick="openMobileSidebar()" title="Встречи">≡</button>
   <div class="logo">🏭 Фуд Завод <small>Трекер встреч</small></div>
   <div class="header-right">
     <button class="btn btn-ghost" onclick="openSprint()">⚡ Спринты</button>
@@ -530,7 +631,22 @@ body {
     <button class="btn btn-ghost" onclick="exportToExcel()" style="font-size:11px;padding:5px 10px">📊 Excel</button>
     <button class="btn btn-ghost" onclick="window.print()" style="font-size:11px;padding:5px 10px">🖨️</button>
   </div>
+  <button class="mobile-burger" id="mob-burger" onclick="toggleMobileMenu()">☰</button>
 </div>
+
+<!-- Mobile dropdown menu -->
+<div class="mobile-menu" id="mobile-menu">
+  <button class="btn btn-ghost" onclick="openSprint();closeMobileMenu()">⚡ Спринты</button>
+  <button class="btn btn-ghost" onclick="openTasksTab();closeMobileMenu()">📋 Задачи</button>
+  <button class="btn btn-ghost" onclick="openSmartFactory();closeMobileMenu()">🏭 Smart Factory</button>
+  <button class="btn btn-ghost" onclick="openNotes();closeMobileMenu()">📝 Заметки</button>
+  <button class="btn btn-ghost" onclick="openReport();closeMobileMenu()">📊 Отчёт</button>
+  <button class="btn btn-ghost" onclick="exportToExcel();closeMobileMenu()">📊 Экспорт Excel</button>
+  <button class="btn btn-ghost" onclick="window.print()">🖨️ Печать</button>
+</div>
+
+<!-- Mobile sidebar backdrop -->
+<div class="mob-backdrop" id="mob-backdrop" onclick="closeMobileSidebar()"></div>
 
 <!-- SPRINT MODAL -->
 <div class="sprint-overlay" id="sprint-overlay" onclick="if(event.target===this)closeSprint()">
@@ -575,9 +691,10 @@ body {
       <div>
         <div class="notes-section-title">Задачи</div>
         <div id="notes-tasks-list"></div>
-        <div class="notes-add-row">
-          <input class="notes-add-inp" id="notes-task-inp" placeholder="Новая задача..." onkeydown="if(event.key==='Enter')addNotesTask()">
-          <button class="notes-add-btn" onclick="addNotesTask()">+ Добавить</button>
+        <div class="notes-add-row" id="notes-add-row">
+          <input class="notes-add-inp" id="notes-task-inp" placeholder="Новая задача..." style="flex:1" onkeydown="if(event.key==='Enter')addNotesTask()">
+          <button class="notes-add-btn" id="notes-add-btn" onclick="addNotesTask()">+ Добавить</button>
+          <button class="notes-add-btn" id="notes-cancel-btn" onclick="cancelNotesEdit()" style="display:none;background:var(--muted)">✕</button>
         </div>
       </div>
     </div>
@@ -594,10 +711,11 @@ body {
       </select>
       <button class="notes-close" onclick="closeTasksTab()">×</button>
     </div>
-    <div class="tasktab-add-row">
-      <input class="notes-add-inp" id="tasktab-title-inp" placeholder="Новая задача..." style="flex:1" onkeydown="if(event.key==='Enter')addTaskTabTask()">
-      <input class="notes-add-inp tasktab-dl" id="tasktab-dl-inp" type="date" title="Срок выполнения">
-      <button class="notes-add-btn" onclick="addTaskTabTask()">+ Добавить</button>
+    <div class="tasktab-add-row" id="tasktab-add-row">
+      <input class="notes-add-inp" id="tasktab-title-inp" placeholder="Название задачи *" style="flex:1" onkeydown="if(event.key==='Enter')addTaskTabTask()">
+      <input class="notes-add-inp tasktab-dl" id="tasktab-dl-inp" type="date" title="Срок (обязательно)" required>
+      <button class="notes-add-btn" id="tasktab-add-btn" onclick="addTaskTabTask()">+ Добавить</button>
+      <button class="notes-add-btn" id="tasktab-cancel-btn" onclick="cancelTaskTabEdit()" style="display:none;background:var(--muted)">✕ Отмена</button>
     </div>
     <div class="tasktab-body" id="tasktab-body">
       <div class="tasktab-empty">Выберите сотрудника для просмотра задач</div>
@@ -637,11 +755,12 @@ body {
 <div class="body">
 
   <!-- SIDEBAR -->
-  <div class="sidebar">
+  <div class="sidebar" id="meetings-sidebar">
     <div class="sidebar-top">
       <div class="type-toggle">
-        <button class="tt-btn on" id="tt-wr"  onclick="setNewType('wr')">📋 Weekly Review</button>
-        <button class="tt-btn"    id="tt-vt"  onclick="setNewType('vt')">👥 1-1</button>
+        <button class="tt-btn on" id="tt-wr"    onclick="setNewType('wr')">📋 WR</button>
+        <button class="tt-btn"    id="tt-vt"    onclick="setNewType('vt')">👥 1-1</button>
+        <button class="tt-btn"    id="tt-tasks" onclick="setNewType('tasks')">✅ Задачи</button>
       </div>
       <div class="new-meeting-row">
         <input class="new-date-input" type="date" id="new-date">
@@ -754,6 +873,7 @@ function startFbListeners() {
     if (sp && sp.classList.contains('open')) renderSprint();
     const tt = document.getElementById('tasktab-overlay');
     if (tt && tt.classList.contains('open')) renderTasksTab();
+    if (newType === 'tasks') renderSidebarTasks();
   });
 
   db.ref('fz_vt_people').on('value', snap => {
@@ -854,7 +974,13 @@ function setNewType(t) {
   newType = t;
   document.getElementById('tt-wr').classList.toggle('on', t === 'wr');
   document.getElementById('tt-vt').classList.toggle('on', t === 'vt');
-  renderList();
+  document.getElementById('tt-tasks').classList.toggle('on', t === 'tasks');
+  const isTasks = t === 'tasks';
+  document.querySelector('.new-meeting-row').style.display = isTasks ? 'none' : '';
+  document.getElementById('sidebar-search').style.display = isTasks ? 'none' : '';
+  document.getElementById('mini-cal').style.display = isTasks ? 'none' : '';
+  if (isTasks) renderSidebarTasks();
+  else renderList();
 }
 
 function getMeeting(id) { return meetings.find(m => m.id === id); }
@@ -1556,6 +1682,44 @@ function renderList() {
   }).join('');
 }
 
+function renderSidebarTasks() {
+  const el = document.getElementById('meetings-list');
+  const allTasks = getSprintTasks();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const byPerson = {};
+  allTasks.filter(t => !t.done).forEach(t => {
+    const key = t.resp || '—';
+    if (!byPerson[key]) byPerson[key] = [];
+    byPerson[key].push(t);
+  });
+  const people = Object.keys(byPerson).sort();
+  if (!people.length) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">Нет активных задач</div>';
+    return;
+  }
+  el.innerHTML = people.map(person => {
+    const tasks = byPerson[person];
+    const overdue = tasks.filter(t => t.deadline && new Date(t.deadline) < today).length;
+    const n = tasks.length;
+    const taskWord = n === 1 ? 'задача' : n < 5 ? 'задачи' : 'задач';
+    return `<div class="meeting-card" data-person="${escHtml(person)}" onclick="openTasksTabFor(this.dataset.person)">
+      <div class="mc-date">👤 ${escHtml(person)}</div>
+      <div class="mc-meta" style="margin-top:5px;flex-wrap:wrap;gap:4px">
+        <span class="mc-badge badge-draft">${n} ${taskWord}</span>
+        ${overdue ? `<span class="mc-badge" style="background:#fff0f0;color:#c0392b">⚠ ${overdue} просроч.</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openTasksTabFor(person) {
+  openTasksTab();
+  setTimeout(() => {
+    const sel = document.getElementById('tasktab-person');
+    if ([...sel.options].some(o => o.value === person)) { sel.value = person; renderTasksTab(); }
+  }, 150);
+}
+
 function showEmpty() {
   document.getElementById('editor-toolbar').style.display = 'none';
   document.getElementById('bottom-bar').style.display = 'none';
@@ -1776,40 +1940,82 @@ function renderTasksTab() {
       if (t) { t.sprint = true; t.sprintWeek = getWeekStr(new Date()); saveSprintTasks(ts); renderTasksTab(); showToast('⚡ Задача добавлена в спринт'); }
     });
   });
+  body.querySelectorAll('.tasktab-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => editTaskTabTask(btn.dataset.tid));
+  });
 }
+let _ttEditId = null;
+
 function _ttRow(t) {
   const curWeek = getWeekStr(new Date());
   const inSprint = t.sprint && t.sprintWeek === curWeek;
   const overdue = t.deadline && !t.done && new Date(t.deadline) < new Date();
-  const dlStr = t.deadline ? new Date(t.deadline).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'}) : '';
+  const dlStr = t.deadline ? new Date(t.deadline).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'}) : '<span style="color:var(--hot);font-size:11px">нет срока</span>';
   const src = (t.meetingId && t.meetingId !== 'standalone') ? '<span class="tasktab-row-src">📋 Встреча</span>' : '';
   const spBtn = !t.done && !inSprint ? `<button class="tasktab-sprint-btn" data-tid="${escHtml(t.id)}" title="В спринт">⚡</button>` : (inSprint ? '<span style="font-size:10px;color:var(--accent)">⚡</span>' : '');
-  const dl = dlStr ? `<span class="tasktab-row-dl${overdue?' overdue':''}">${dlStr}</span>` : '';
+  const dl = t.deadline ? `<span class="tasktab-row-dl${overdue?' overdue':''}">${dlStr}</span>` : `<span class="tasktab-row-dl overdue" style="font-size:10px">нет срока</span>`;
+  // Only standalone tasks are editable
+  const editBtn = (t.meetingId === 'standalone') ? `<button class="tasktab-edit-btn" data-tid="${escHtml(t.id)}" title="Редактировать">✏️</button>` : '';
   return `<div class="tasktab-row">
     <input type="checkbox" class="notes-chk tasktab-chk" data-tid="${escHtml(t.id)}" ${t.done?'checked':''}>
     <span class="tasktab-row-title${t.done?' tasktab-row-done':''}">${escHtml(t.title)}</span>
-    ${dl}${src}${spBtn}
+    ${dl}${src}${spBtn}${editBtn}
     <button class="tasktab-row-del tasktab-del" data-tid="${escHtml(t.id)}">×</button>
   </div>`;
 }
+
 function addTaskTabTask() {
   const person = document.getElementById('tasktab-person').value;
-  if (!person) { showToast('Выберите сотрудника'); return; }
+  if (!person) { showToast('⚠️ Выберите должность'); document.getElementById('tasktab-person').focus(); return; }
   const inp = document.getElementById('tasktab-title-inp');
-  const title = inp.value.trim(); if (!title) return;
+  const title = inp.value.trim();
+  if (!title) { showToast('⚠️ Введите название задачи'); inp.focus(); return; }
   const dl = document.getElementById('tasktab-dl-inp').value;
+  if (!dl) { showToast('⚠️ Укажите срок выполнения'); document.getElementById('tasktab-dl-inp').focus(); return; }
+
   const ts = getSprintTasks();
-  ts.push({ id: Date.now().toString()+Math.random().toString(36).slice(2), title, resp: person, done: false, sprint: false, sprintWeek: '', meetingId: 'standalone', deadline: dl||null, note: '' });
+  if (_ttEditId) {
+    const t = ts.find(x => x.id === _ttEditId);
+    if (t) { t.title = title; t.resp = person; t.deadline = dl; }
+    _ttEditId = null;
+    document.getElementById('tasktab-add-btn').textContent = '+ Добавить';
+    document.getElementById('tasktab-cancel-btn').style.display = 'none';
+    showToast('✅ Задача обновлена');
+  } else {
+    ts.push({ id: Date.now().toString()+Math.random().toString(36).slice(2), title, resp: person, done: false, sprint: false, sprintWeek: '', meetingId: 'standalone', deadline: dl, note: '' });
+  }
   saveSprintTasks(ts);
   inp.value = ''; document.getElementById('tasktab-dl-inp').value = '';
   renderTasksTab();
+}
+
+function editTaskTabTask(id) {
+  const ts = getSprintTasks();
+  const t = ts.find(x => x.id === id); if (!t) return;
+  _ttEditId = id;
+  document.getElementById('tasktab-title-inp').value = t.title;
+  document.getElementById('tasktab-dl-inp').value = t.deadline || '';
+  const sel = document.getElementById('tasktab-person');
+  if ([...sel.options].some(o => o.value === t.resp)) sel.value = t.resp;
+  document.getElementById('tasktab-add-btn').textContent = '💾 Сохранить';
+  document.getElementById('tasktab-cancel-btn').style.display = '';
+  document.getElementById('tasktab-title-inp').focus();
+  document.getElementById('tasktab-add-row').scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+function cancelTaskTabEdit() {
+  _ttEditId = null;
+  document.getElementById('tasktab-title-inp').value = '';
+  document.getElementById('tasktab-dl-inp').value = '';
+  document.getElementById('tasktab-add-btn').textContent = '+ Добавить';
+  document.getElementById('tasktab-cancel-btn').style.display = 'none';
 }
 function sprintPrevWeek() { sprintWeek = offsetWeek(sprintWeek, -1); renderSprint(); }
 function sprintNextWeek() { sprintWeek = offsetWeek(sprintWeek, +1); renderSprint(); }
 
 let _tasksWriteTime = 0;
 function getSprintTasks() { return JSON.parse(localStorage.getItem('fz_tasks') || '[]'); }
-function saveSprintTasks(t) { localStorage.setItem('fz_tasks', JSON.stringify(t)); _tasksWriteTime = Date.now(); fbSet('fz_tasks', t); }
+function saveSprintTasks(t) { localStorage.setItem('fz_tasks', JSON.stringify(t)); _tasksWriteTime = Date.now(); fbSet('fz_tasks', t); if (newType === 'tasks') renderSidebarTasks(); }
 
 function renderSprint() {
   document.getElementById('sprint-week-lbl').textContent = weekLabel(sprintWeek);
@@ -2352,12 +2558,37 @@ function closeNotes() { document.getElementById('notes-overlay').classList.remov
 function saveNotesText() { localStorage.setItem('fz_personal_notes', document.getElementById('notes-text').value); }
 function getNotesTasks() { return JSON.parse(localStorage.getItem('fz_personal_tasks') || '[]'); }
 function saveNotesTasks(list) { localStorage.setItem('fz_personal_tasks', JSON.stringify(list)); }
+let _notesEditId = null;
 function addNotesTask() {
   const inp = document.getElementById('notes-task-inp');
   const title = inp.value.trim(); if (!title) return;
   const list = getNotesTasks();
-  list.push({ id: Date.now().toString(), title, done: false });
+  if (_notesEditId) {
+    const t = list.find(x => x.id === _notesEditId);
+    if (t) t.title = title;
+    _notesEditId = null;
+    document.getElementById('notes-add-btn').textContent = '+ Добавить';
+    document.getElementById('notes-cancel-btn').style.display = 'none';
+    showToast('✅ Задача обновлена');
+  } else {
+    list.push({ id: Date.now().toString(), title, done: false });
+  }
   saveNotesTasks(list); inp.value = ''; renderNotesTasks();
+}
+function editNotesTask(id) {
+  const t = getNotesTasks().find(x => x.id === id); if (!t) return;
+  _notesEditId = id;
+  const inp = document.getElementById('notes-task-inp');
+  inp.value = t.title;
+  document.getElementById('notes-add-btn').textContent = '💾 Сохранить';
+  document.getElementById('notes-cancel-btn').style.display = '';
+  inp.focus();
+}
+function cancelNotesEdit() {
+  _notesEditId = null;
+  document.getElementById('notes-task-inp').value = '';
+  document.getElementById('notes-add-btn').textContent = '+ Добавить';
+  document.getElementById('notes-cancel-btn').style.display = 'none';
 }
 function toggleNotesTask(id) {
   const list = getNotesTasks(); const t = list.find(x => x.id === id); if (t) t.done = !t.done;
@@ -2371,6 +2602,7 @@ function renderNotesTasks() {
     : list.map(t => `<div class="notes-task-row">
         <input type="checkbox" class="notes-chk" ${t.done?'checked':''} onchange="toggleNotesTask('${t.id}')">
         <span class="notes-task-title ${t.done?'notes-task-done':''}">${escHtml(t.title)}</span>
+        <button class="notes-task-del" style="color:#bbb;font-size:14px" onclick="editNotesTask('${t.id}')" title="Редактировать">✏️</button>
         <button class="notes-task-del" onclick="deleteNotesTask('${t.id}')">×</button>
       </div>`).join('');
 }
@@ -2388,6 +2620,35 @@ if (!checkShareView()) {
   if (meetings.length) openMeeting(meetings[0].id);
   startFbListeners(); // sync with Firebase
 }
+
+// ── MOBILE ────────────────────────────────────────────────────────────────
+function toggleMobileMenu() {
+  document.getElementById('mobile-menu').classList.toggle('open');
+}
+function closeMobileMenu() {
+  document.getElementById('mobile-menu').classList.remove('open');
+}
+function openMobileSidebar() {
+  document.getElementById('meetings-sidebar').classList.add('mob-open');
+  document.getElementById('mob-backdrop').classList.add('open');
+  closeMobileMenu();
+}
+function closeMobileSidebar() {
+  document.getElementById('meetings-sidebar').classList.remove('mob-open');
+  document.getElementById('mob-backdrop').classList.remove('open');
+}
+// Закрыть мобильное меню при клике вне него
+document.addEventListener('click', e => {
+  if (!e.target.closest('#mob-burger') && !e.target.closest('#mobile-menu')) {
+    closeMobileMenu();
+  }
+});
+// Закрыть сайдбар при выборе встречи
+const _origOpenMeeting = openMeeting;
+openMeeting = function(id) { _origOpenMeeting(id); closeMobileSidebar(); };
+// Фиксируем высоту viewport (для Safari на iOS)
+function setVH() { document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px'); }
+setVH(); window.addEventListener('resize', setVH);
 </script>
 </body>
 </html>
