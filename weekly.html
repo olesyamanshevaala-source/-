@@ -396,6 +396,44 @@ body {
 .spr-add-inp:focus { border-color:var(--accent); }
 .spr-add-ok { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:7px 14px; font-size:12px; font-weight:700; cursor:pointer; }
 
+/* ── SMART FACTORY MODAL ── */
+.sf-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; align-items:flex-start; justify-content:center; padding:30px 16px; overflow-y:auto; }
+.sf-overlay.open { display:flex; }
+.sf-modal { background:#fff; border-radius:16px; width:860px; max-width:98vw; display:flex; flex-direction:column; box-shadow:0 12px 40px rgba(0,0,0,.25); overflow:hidden; margin-bottom:30px; }
+.sf-head { padding:16px 22px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; flex-shrink:0; background: linear-gradient(135deg,#1a1714 0%,#2d2420 100%); color:#fff; }
+.sf-head h2 { margin:0; font-size:16px; flex:1; }
+.sf-close { background:rgba(255,255,255,.15); border:none; font-size:20px; cursor:pointer; color:#fff; border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; }
+.sf-close:hover { background:rgba(255,255,255,.3); }
+.sf-add-btn-top { background:#e6b800; color:#1a1714; border:none; border-radius:8px; padding:8px 16px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; }
+.sf-add-btn-top:hover { background:#f0c800; }
+.sf-body { padding:20px 22px; display:flex; flex-direction:column; gap:16px; max-height:75vh; overflow-y:auto; }
+.sf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; }
+.sf-card { background:var(--bg); border-radius:12px; overflow:hidden; border:1.5px solid var(--border); transition:box-shadow .15s; }
+.sf-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.1); }
+.sf-card-img { width:100%; height:160px; object-fit:cover; display:block; background:#e8e5e0; }
+.sf-card-img-empty { width:100%; height:120px; background:#f0ede8; display:flex; align-items:center; justify-content:center; font-size:32px; color:#ccc; }
+.sf-card-body { padding:12px 14px; }
+.sf-card-title { font-weight:700; font-size:13.5px; margin-bottom:5px; }
+.sf-card-desc { font-size:12.5px; color:var(--muted); line-height:1.5; }
+.sf-card-footer { display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
+.sf-card-date { font-size:11px; color:var(--muted); }
+.sf-card-del { background:none; border:none; color:#ccc; cursor:pointer; font-size:14px; padding:2px 4px; border-radius:4px; }
+.sf-card-del:hover { background:#fff3f3; color:var(--hot); }
+.sf-empty { text-align:center; padding:40px 20px; color:var(--muted); font-size:14px; }
+.sf-form { background:var(--bg); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:12px; }
+.sf-form-title { font-weight:700; font-size:13px; margin-bottom:2px; }
+.sf-inp { width:100%; border:1.5px solid var(--border); border-radius:8px; padding:9px 12px; font-size:13px; font-family:inherit; outline:none; background:#fff; }
+.sf-inp:focus { border-color:var(--accent); }
+.sf-textarea { width:100%; border:1.5px solid var(--border); border-radius:8px; padding:9px 12px; font-size:13px; font-family:inherit; outline:none; resize:vertical; min-height:80px; background:#fff; }
+.sf-textarea:focus { border-color:var(--accent); }
+.sf-photo-label { display:inline-flex; align-items:center; gap:7px; background:#fff; border:1.5px dashed var(--border); border-radius:8px; padding:9px 14px; font-size:12.5px; cursor:pointer; color:var(--muted); transition:border-color .15s; }
+.sf-photo-label:hover { border-color:var(--accent); color:var(--accent); }
+.sf-photo-preview { max-width:100%; max-height:180px; border-radius:8px; display:none; margin-top:4px; object-fit:cover; }
+.sf-form-row { display:flex; gap:8px; justify-content:flex-end; }
+.sf-cancel-btn { background:var(--bg); border:1.5px solid var(--border); border-radius:8px; padding:8px 16px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; }
+.sf-save-btn { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:8px 18px; font-size:12px; font-weight:700; cursor:pointer; }
+.sf-save-btn:hover { opacity:.85; }
+
 /* ── NOTES MODAL ── */
 .notes-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; align-items:flex-start; justify-content:center; padding:30px 0; }
 .notes-overlay.open { display:flex; }
@@ -460,6 +498,7 @@ body {
   <div class="logo">🏭 Фуд Завод <small>Трекер встреч</small></div>
   <div class="header-right">
     <button class="btn btn-ghost" onclick="openSprint()">⚡ Спринты</button>
+    <button class="btn btn-ghost" onclick="openSmartFactory()">🏭 Smart Factory</button>
     <button class="btn btn-ghost" onclick="openNotes()">📝 Заметки</button>
     <button class="btn btn-ghost" onclick="openReport()">📊 Отчёт по участнику</button>
     <button class="btn btn-ghost" onclick="window.print()">↓ Печать</button>
@@ -479,6 +518,18 @@ body {
       <button class="sprint-close" onclick="closeSprint()">×</button>
     </div>
     <div class="sprint-body" id="sprint-body"></div>
+  </div>
+</div>
+
+<!-- SMART FACTORY MODAL -->
+<div class="sf-overlay" id="sf-overlay" onclick="if(event.target===this)closeSmartFactory()">
+  <div class="sf-modal">
+    <div class="sf-head">
+      <h2>🏭 Smart Factory — Банк идей</h2>
+      <button class="sf-add-btn-top" onclick="sfShowForm()">+ Добавить идею</button>
+      <button class="sf-close" onclick="closeSmartFactory()">×</button>
+    </div>
+    <div class="sf-body" id="sf-body"></div>
   </div>
 </div>
 
@@ -1912,6 +1963,114 @@ function fmtDateShort(iso) {
 function escHtml(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// ── SMART FACTORY ─────────────────────────────────────────────────────────
+let sfIdeas = JSON.parse(localStorage.getItem('fz_sf_ideas') || '[]');
+let sfFormOpen = false;
+let sfPhotoData = null;
+
+function openSmartFactory() { document.getElementById('sf-overlay').classList.add('open'); renderSF(); }
+function closeSmartFactory() { document.getElementById('sf-overlay').classList.remove('open'); }
+
+function saveSFIdeas() {
+  localStorage.setItem('fz_sf_ideas', JSON.stringify(sfIdeas));
+  fbSet('fz_sf_ideas', sfIdeas);
+}
+
+function sfShowForm() {
+  sfFormOpen = true; sfPhotoData = null; renderSF();
+  setTimeout(() => document.getElementById('sf-title-inp')?.focus(), 50);
+}
+function sfHideForm() { sfFormOpen = false; sfPhotoData = null; renderSF(); }
+
+function sfPhotoChange(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    // compress via canvas
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 800;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      sfPhotoData = canvas.toDataURL('image/jpeg', 0.75);
+      const prev = document.getElementById('sf-photo-prev');
+      if (prev) { prev.src = sfPhotoData; prev.style.display = 'block'; }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function sfSaveIdea() {
+  const title = document.getElementById('sf-title-inp')?.value.trim();
+  const desc = document.getElementById('sf-desc-inp')?.value.trim();
+  if (!title) { alert('Введите название идеи'); return; }
+  sfIdeas.unshift({ id: Date.now().toString(), title, desc, photo: sfPhotoData || null, date: new Date().toISOString().slice(0,10) });
+  saveSFIdeas(); sfFormOpen = false; sfPhotoData = null; renderSF();
+  showToast('💡 Идея добавлена в банк');
+}
+
+function sfDeleteIdea(id) {
+  sfIdeas = sfIdeas.filter(x => x.id !== id);
+  saveSFIdeas(); renderSF();
+}
+
+function renderSF() {
+  const body = document.getElementById('sf-body'); if (!body) return;
+  let html = '';
+  if (sfFormOpen) {
+    html += `<div class="sf-form">
+      <div class="sf-form-title">Новая идея</div>
+      <input class="sf-inp" id="sf-title-inp" placeholder="Название идеи *">
+      <textarea class="sf-textarea" id="sf-desc-inp" placeholder="Описание (необязательно)"></textarea>
+      <div>
+        <label class="sf-photo-label">📷 Прикрепить фото
+          <input type="file" accept="image/*" style="display:none" onchange="sfPhotoChange(this)">
+        </label>
+        <img id="sf-photo-prev" class="sf-photo-preview">
+      </div>
+      <div class="sf-form-row">
+        <button class="sf-cancel-btn" onclick="sfHideForm()">Отмена</button>
+        <button class="sf-save-btn" onclick="sfSaveIdea()">Сохранить идею</button>
+      </div>
+    </div>`;
+  }
+  if (sfIdeas.length === 0 && !sfFormOpen) {
+    html += `<div class="sf-empty">💡 Банк идей пуст — нажмите «+ Добавить идею»</div>`;
+  } else if (sfIdeas.length > 0) {
+    html += `<div class="sf-grid">` + sfIdeas.map(idea => `
+      <div class="sf-card">
+        ${idea.photo
+          ? `<img class="sf-card-img" src="${idea.photo}" alt="">`
+          : `<div class="sf-card-img-empty">💡</div>`}
+        <div class="sf-card-body">
+          <div class="sf-card-title">${escHtml(idea.title)}</div>
+          ${idea.desc ? `<div class="sf-card-desc">${escHtml(idea.desc)}</div>` : ''}
+          <div class="sf-card-footer">
+            <span class="sf-card-date">${idea.date || ''}</span>
+            <button class="sf-card-del" onclick="sfDeleteIdea('${idea.id}')" title="Удалить">🗑</button>
+          </div>
+        </div>
+      </div>`).join('') + `</div>`;
+  }
+  body.innerHTML = html;
+}
+
+// Firebase listener for Smart Factory
+db.ref('fz_sf_ideas').on('value', snap => {
+  const raw = snap.val();
+  if (raw === null) { if (sfIdeas.length > 0) fbSet('fz_sf_ideas', sfIdeas); return; }
+  const remote = JSON.parse(raw);
+  if (JSON.stringify(remote) === JSON.stringify(sfIdeas)) return;
+  sfIdeas = remote;
+  localStorage.setItem('fz_sf_ideas', raw);
+  const overlay = document.getElementById('sf-overlay');
+  if (overlay && overlay.classList.contains('open')) renderSF();
+});
+// ─────────────────────────────────────────────────────────────────────────
 
 // ── PERSONAL NOTES ────────────────────────────────────────────────────────
 function openNotes() { document.getElementById('notes-overlay').classList.add('open'); renderNotes(); }
