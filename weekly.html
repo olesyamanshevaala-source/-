@@ -605,6 +605,24 @@ body {
   .logo { font-size:14px; }
 }
 
+/* ── TASK EDITOR (inline in main area) ── */
+.task-editor-wrap { padding: 24px 32px; max-width: 820px; }
+.task-editor-head { display:flex; align-items:center; gap:12px; margin-bottom:18px; border-bottom:1.5px solid var(--border); padding-bottom:14px; }
+.task-editor-head h2 { margin:0; font-size:19px; font-weight:700; }
+.task-editor-head small { color:var(--muted); font-size:12.5px; font-weight:400; }
+.task-editor-add-row { display:flex; gap:8px; margin-bottom:20px; align-items:center; flex-wrap:wrap; }
+.task-editor-section-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:14px 0 6px; }
+.task-editor-list { display:flex; flex-direction:column; gap:5px; margin-bottom:8px; }
+.te-row { display:flex; align-items:center; gap:8px; padding:9px 12px; background:#fff; border:1px solid var(--border); border-radius:8px; transition:border-color .15s; }
+.te-row:hover { border-color:var(--accent); }
+.te-chk { width:15px; height:15px; cursor:pointer; flex-shrink:0; accent-color:var(--accent); }
+.te-title { flex:1; font-size:13.5px; }
+.te-title-done { text-decoration:line-through; color:var(--muted); }
+.te-dl { font-size:11.5px; color:var(--muted); white-space:nowrap; min-width:54px; text-align:right; }
+.te-dl-over { color:#c0392b; font-weight:600; }
+.te-btn { border:none; background:transparent; cursor:pointer; padding:3px 6px; border-radius:5px; font-size:12.5px; color:var(--muted); }
+.te-btn:hover { background:var(--bg); color:var(--fg); }
+
 @media print {
   .sidebar, .editor-toolbar, .bottom-bar, .header { display: none !important; }
   .editor-body { padding: 0; overflow: visible; }
@@ -873,7 +891,7 @@ function startFbListeners() {
     if (sp && sp.classList.contains('open')) renderSprint();
     const tt = document.getElementById('tasktab-overlay');
     if (tt && tt.classList.contains('open')) renderTasksTab();
-    if (newType === 'tasks') renderSidebarTasks();
+    if (newType === 'tasks') { renderSidebarTasks(); if (currentTaskPerson) renderTasksInEditor(currentTaskPerson); }
   });
 
   db.ref('fz_vt_people').on('value', snap => {
@@ -967,6 +985,7 @@ function saveMeetings(m) { localStorage.setItem('fz_meetings', JSON.stringify(m)
 let meetings = loadMeetings();
 let currentId = null;
 let newType = 'wr';
+let currentTaskPerson = null;
 let wrEditingIdx = null; // index of WR item being edited
 let vtEditTask = null;   // { key, idx } of VT task being edited
 
@@ -979,8 +998,12 @@ function setNewType(t) {
   document.querySelector('.new-meeting-row').style.display = isTasks ? 'none' : '';
   document.getElementById('sidebar-search').style.display = isTasks ? 'none' : '';
   document.getElementById('mini-cal').style.display = isTasks ? 'none' : '';
-  if (isTasks) renderSidebarTasks();
-  else renderList();
+  if (isTasks) {
+    renderSidebarTasks();
+  } else {
+    if (currentTaskPerson) { currentTaskPerson = null; showEmpty(); }
+    renderList();
+  }
 }
 
 function getMeeting(id) { return meetings.find(m => m.id === id); }
@@ -1702,7 +1725,8 @@ function renderSidebarTasks() {
     const overdue = tasks.filter(t => t.deadline && new Date(t.deadline) < today).length;
     const n = tasks.length;
     const taskWord = n === 1 ? 'задача' : n < 5 ? 'задачи' : 'задач';
-    return `<div class="meeting-card" data-person="${escHtml(person)}" onclick="openTasksTabFor(this.dataset.person)">
+    const isActive = person === currentTaskPerson;
+    return `<div class="meeting-card ${isActive ? 'active' : ''}" data-person="${escHtml(person)}" onclick="openTasksTabFor(this.dataset.person)">
       <div class="mc-date">👤 ${escHtml(person)}</div>
       <div class="mc-meta" style="margin-top:5px;flex-wrap:wrap;gap:4px">
         <span class="mc-badge badge-draft">${n} ${taskWord}</span>
@@ -1713,11 +1737,110 @@ function renderSidebarTasks() {
 }
 
 function openTasksTabFor(person) {
-  openTasksTab();
-  setTimeout(() => {
-    const sel = document.getElementById('tasktab-person');
-    if ([...sel.options].some(o => o.value === person)) { sel.value = person; renderTasksTab(); }
-  }, 150);
+  currentTaskPerson = person;
+  document.querySelectorAll('#meetings-list .meeting-card').forEach(c => c.classList.toggle('active', c.dataset.person === person));
+  renderTasksInEditor(person);
+}
+
+let _teEditId = null;
+
+function renderTasksInEditor(person) {
+  document.getElementById('editor-toolbar').style.display = 'none';
+  document.getElementById('bottom-bar').style.display = 'none';
+  const allTasks = getSprintTasks().filter(t => t.resp === person);
+  const active = allTasks.filter(t => !t.done);
+  const done   = allTasks.filter(t => t.done);
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  function fmtDl(d) {
+    if (!d) return '<span style="color:var(--hot);font-size:11px">нет срока</span>';
+    const [y,m,day] = d.split('-');
+    return `${day}.${m}.${y.slice(2)}`;
+  }
+  function taskRow(t) {
+    const isOver = !t.done && t.deadline && new Date(t.deadline) < today;
+    return `<div class="te-row">
+      <input type="checkbox" class="te-chk" data-tid="${t.id}" ${t.done ? 'checked' : ''}>
+      <span class="te-title ${t.done ? 'te-title-done' : ''}">${escHtml(t.title)}</span>
+      <span class="te-dl ${isOver ? 'te-dl-over' : ''}">${fmtDl(t.deadline)}</span>
+      ${!t.sprint && !t.done ? `<button class="te-btn te-sprint-btn" data-tid="${t.id}" title="В спринт">⚡</button>` : ''}
+      <button class="te-btn te-edit-btn" data-tid="${t.id}" title="Редактировать">✏️</button>
+      <button class="te-btn te-del-btn" data-tid="${t.id}" title="Удалить">×</button>
+    </div>`;
+  }
+
+  const todayVal = new Date().toISOString().split('T')[0];
+  const body = document.getElementById('editor-body');
+  body.innerHTML = `<div class="task-editor-wrap">
+    <div class="task-editor-head">
+      <h2>👤 ${escHtml(person)}</h2>
+      <small>${active.length} активных${done.length ? ` · ${done.length} выполнено` : ''}</small>
+    </div>
+    <div class="task-editor-add-row" id="te-add-row">
+      <input class="notes-add-inp" id="te-title-inp" placeholder="Название задачи *" style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')teAddTask()">
+      <input class="notes-add-inp tasktab-dl" id="te-dl-inp" type="date" value="${todayVal}" style="width:145px">
+      <button class="notes-add-btn" id="te-add-btn" onclick="teAddTask()">+ Добавить</button>
+      <button class="notes-add-btn" id="te-cancel-btn" onclick="teCancelEdit()" style="display:none;background:var(--muted)">✕ Отмена</button>
+    </div>
+    ${active.length ? `<div class="task-editor-section-label">Активные (${active.length})</div>
+    <div class="task-editor-list">${active.map(taskRow).join('')}</div>` : '<div style="color:var(--muted);font-size:13px;padding:8px 0 16px">Нет активных задач</div>'}
+    ${done.length ? `<div class="task-editor-section-label" style="cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">✅ Выполнено (${done.length}) ▾</div>
+    <div class="task-editor-list">${done.map(taskRow).join('')}</div>` : ''}
+  </div>`;
+
+  body.querySelectorAll('.te-chk').forEach(chk => chk.addEventListener('change', () => {
+    const ts = getSprintTasks(), t = ts.find(x => x.id === chk.dataset.tid);
+    if (t) { t.done = chk.checked; saveSprintTasks(ts); renderTasksInEditor(person); }
+  }));
+  body.querySelectorAll('.te-del-btn').forEach(btn => btn.addEventListener('click', () => {
+    if (!confirm('Удалить задачу?')) return;
+    saveSprintTasks(getSprintTasks().filter(x => x.id !== btn.dataset.tid));
+    renderTasksInEditor(person);
+  }));
+  body.querySelectorAll('.te-sprint-btn').forEach(btn => btn.addEventListener('click', () => {
+    const ts = getSprintTasks(), t = ts.find(x => x.id === btn.dataset.tid);
+    if (t) { t.sprint = true; t.sprintWeek = getWeekStr(new Date()); saveSprintTasks(ts); renderTasksInEditor(person); showToast('⚡ Задача добавлена в спринт'); }
+  }));
+  body.querySelectorAll('.te-edit-btn').forEach(btn => btn.addEventListener('click', () => teEditTask(btn.dataset.tid)));
+}
+
+function teAddTask() {
+  const title = document.getElementById('te-title-inp').value.trim();
+  if (!title) { showToast('⚠️ Введите название задачи'); return; }
+  const dl = document.getElementById('te-dl-inp').value;
+  if (!dl) { showToast('⚠️ Укажите срок выполнения'); return; }
+  const ts = getSprintTasks();
+  if (_teEditId) {
+    const t = ts.find(x => x.id === _teEditId);
+    if (t) { t.title = title; t.deadline = dl; }
+    _teEditId = null;
+    document.getElementById('te-add-btn').textContent = '+ Добавить';
+    document.getElementById('te-cancel-btn').style.display = 'none';
+    showToast('✅ Задача обновлена');
+  } else {
+    ts.push({ id: Date.now().toString()+Math.random().toString(36).slice(2), title, resp: currentTaskPerson, done: false, sprint: false, sprintWeek: '', meetingId: 'standalone', deadline: dl, note: '' });
+    showToast('✅ Задача добавлена');
+  }
+  saveSprintTasks(ts);
+  renderTasksInEditor(currentTaskPerson);
+}
+
+function teEditTask(id) {
+  const t = getSprintTasks().find(x => x.id === id); if (!t) return;
+  _teEditId = id;
+  document.getElementById('te-title-inp').value = t.title;
+  document.getElementById('te-dl-inp').value = t.deadline || '';
+  document.getElementById('te-add-btn').textContent = '💾 Сохранить';
+  document.getElementById('te-cancel-btn').style.display = '';
+  document.getElementById('te-title-inp').focus();
+}
+
+function teCancelEdit() {
+  _teEditId = null;
+  document.getElementById('te-title-inp').value = '';
+  document.getElementById('te-dl-inp').value = new Date().toISOString().split('T')[0];
+  document.getElementById('te-add-btn').textContent = '+ Добавить';
+  document.getElementById('te-cancel-btn').style.display = 'none';
 }
 
 function showEmpty() {
