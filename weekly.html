@@ -407,18 +407,17 @@ body {
 .sf-add-btn-top { background:#e6b800; color:#1a1714; border:none; border-radius:8px; padding:8px 16px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; }
 .sf-add-btn-top:hover { background:#f0c800; }
 .sf-body { padding:20px 22px; display:flex; flex-direction:column; gap:16px; max-height:75vh; overflow-y:auto; }
-.sf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; }
-.sf-card { background:var(--bg); border-radius:12px; overflow:hidden; border:1.5px solid var(--border); transition:box-shadow .15s; }
-.sf-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.1); }
-.sf-card-img { width:100%; height:160px; object-fit:cover; display:block; background:#e8e5e0; }
-.sf-card-img-empty { width:100%; height:120px; background:#f0ede8; display:flex; align-items:center; justify-content:center; font-size:32px; color:#ccc; }
-.sf-card-body { padding:12px 14px; }
-.sf-card-title { font-weight:700; font-size:13.5px; margin-bottom:5px; }
-.sf-card-desc { font-size:12.5px; color:var(--muted); line-height:1.5; }
-.sf-card-footer { display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
-.sf-card-date { font-size:11px; color:var(--muted); }
-.sf-card-del { background:none; border:none; color:#ccc; cursor:pointer; font-size:14px; padding:2px 4px; border-radius:4px; }
-.sf-card-del:hover { background:#fff3f3; color:var(--hot); }
+.sf-list { display:flex; flex-direction:column; gap:8px; }
+.sf-item { display:flex; align-items:flex-start; gap:12px; background:var(--bg); border-radius:10px; padding:12px 14px; border:1.5px solid var(--border); }
+.sf-item-thumb { width:72px; height:56px; object-fit:cover; border-radius:7px; flex-shrink:0; display:block; }
+.sf-item-thumb-empty { width:72px; height:56px; background:#e8e5e0; border-radius:7px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:22px; color:#ccc; }
+.sf-item-content { flex:1; min-width:0; }
+.sf-item-title { font-weight:700; font-size:13.5px; margin-bottom:3px; }
+.sf-item-desc { font-size:12.5px; color:var(--muted); line-height:1.5; }
+.sf-item-footer { display:flex; align-items:center; gap:8px; margin-top:6px; }
+.sf-item-date { font-size:11px; color:var(--muted); }
+.sf-item-del { background:none; border:none; color:#ccc; cursor:pointer; font-size:14px; padding:2px 5px; border-radius:4px; margin-left:auto; }
+.sf-item-del:hover { background:#fff3f3; color:var(--hot); }
 .sf-empty { text-align:center; padding:40px 20px; color:var(--muted); font-size:14px; }
 .sf-form { background:var(--bg); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:12px; }
 .sf-form-title { font-weight:700; font-size:13px; margin-bottom:2px; }
@@ -2041,17 +2040,17 @@ function renderSF() {
   if (sfIdeas.length === 0 && !sfFormOpen) {
     html += `<div class="sf-empty">💡 Банк идей пуст — нажмите «+ Добавить идею»</div>`;
   } else if (sfIdeas.length > 0) {
-    html += `<div class="sf-grid">` + sfIdeas.map(idea => `
-      <div class="sf-card">
+    html += `<div class="sf-list">` + sfIdeas.map((idea, i) => `
+      <div class="sf-item">
         ${idea.photo
-          ? `<img class="sf-card-img" src="${idea.photo}" alt="">`
-          : `<div class="sf-card-img-empty">💡</div>`}
-        <div class="sf-card-body">
-          <div class="sf-card-title">${escHtml(idea.title)}</div>
-          ${idea.desc ? `<div class="sf-card-desc">${escHtml(idea.desc)}</div>` : ''}
-          <div class="sf-card-footer">
-            <span class="sf-card-date">${idea.date || ''}</span>
-            <button class="sf-card-del" onclick="sfDeleteIdea('${idea.id}')" title="Удалить">🗑</button>
+          ? `<img class="sf-item-thumb" src="${idea.photo}" alt="">`
+          : `<div class="sf-item-thumb-empty">💡</div>`}
+        <div class="sf-item-content">
+          <div class="sf-item-title">${i+1}. ${escHtml(idea.title)}</div>
+          ${idea.desc ? `<div class="sf-item-desc">${escHtml(idea.desc)}</div>` : ''}
+          <div class="sf-item-footer">
+            <span class="sf-item-date">${idea.date || ''}</span>
+            <button class="sf-item-del" onclick="sfDeleteIdea('${idea.id}')" title="Удалить">🗑</button>
           </div>
         </div>
       </div>`).join('') + `</div>`;
