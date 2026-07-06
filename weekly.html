@@ -418,6 +418,7 @@ body {
 .sf-item-date { font-size:11px; color:var(--muted); }
 .sf-item-del { background:none; border:none; color:#ccc; cursor:pointer; font-size:14px; padding:2px 5px; border-radius:4px; margin-left:auto; }
 .sf-item-del:hover { background:#fff3f3; color:var(--hot); }
+.sf-item-done { opacity:.6; }
 .sf-empty { text-align:center; padding:40px 20px; color:var(--muted); font-size:14px; }
 .sf-form { background:var(--bg); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:12px; }
 .sf-form-title { font-weight:700; font-size:13px; margin-bottom:2px; }
@@ -455,6 +456,31 @@ body {
 .notes-add-inp:focus { border-color:var(--accent); }
 .notes-add-btn { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:8px 16px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; }
 .notes-add-btn:hover { opacity:.85; }
+
+/* ── TASKS TAB MODAL ── */
+.tasktab-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; align-items:flex-start; justify-content:center; padding:30px 0; }
+.tasktab-overlay.open { display:flex; }
+.tasktab-modal { background:#fff; border-radius:16px; width:700px; max-width:95vw; display:flex; flex-direction:column; box-shadow:0 12px 40px rgba(0,0,0,.25); overflow:hidden; max-height:88vh; }
+.tasktab-head { padding:14px 22px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; flex-shrink:0; }
+.tasktab-head h2 { margin:0; font-size:16px; }
+.tasktab-person-sel { flex:1; border:1.5px solid var(--border); border-radius:8px; padding:7px 10px; font-size:13px; font-family:inherit; outline:none; background:#fff; cursor:pointer; }
+.tasktab-person-sel:focus { border-color:var(--accent); }
+.tasktab-add-row { display:flex; gap:7px; padding:12px 22px; border-bottom:1px solid var(--border); flex-shrink:0; flex-wrap:wrap; }
+.tasktab-dl { max-width:140px; }
+.tasktab-body { flex:1; overflow-y:auto; padding:14px 22px; }
+.tasktab-group { margin-bottom:20px; }
+.tasktab-group-title { font-weight:700; font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
+.tasktab-row { display:flex; align-items:center; gap:9px; background:var(--bg); border-radius:8px; padding:9px 12px; font-size:13px; margin-bottom:5px; }
+.tasktab-row-title { flex:1; }
+.tasktab-row-done { text-decoration:line-through; color:var(--muted); }
+.tasktab-row-dl { font-size:11px; color:var(--muted); white-space:nowrap; }
+.tasktab-row-dl.overdue { color:var(--hot); font-weight:600; }
+.tasktab-row-src { font-size:10.5px; color:var(--accent); background:rgba(99,102,241,.08); border-radius:4px; padding:2px 6px; white-space:nowrap; }
+.tasktab-row-del { background:none; border:none; color:#ccc; cursor:pointer; font-size:16px; padding:0 3px; }
+.tasktab-row-del:hover { color:var(--hot); }
+.tasktab-sprint-btn { background:none; border:1px solid var(--accent); border-radius:6px; color:var(--accent); font-size:10px; font-weight:700; cursor:pointer; padding:2px 7px; white-space:nowrap; }
+.tasktab-sprint-btn:hover { background:var(--accent); color:#fff; }
+.tasktab-empty { text-align:center; color:var(--muted); font-size:13px; padding:40px 0; }
 
 /* ── REPORT MODAL ── */
 .report-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:200; align-items:flex-start; justify-content:center; padding-top:40px; }
@@ -497,10 +523,12 @@ body {
   <div class="logo">🏭 Фуд Завод <small>Трекер встреч</small></div>
   <div class="header-right">
     <button class="btn btn-ghost" onclick="openSprint()">⚡ Спринты</button>
+    <button class="btn btn-ghost" onclick="openTasksTab()">📋 Задачи</button>
     <button class="btn btn-ghost" onclick="openSmartFactory()">🏭 Smart Factory</button>
     <button class="btn btn-ghost" onclick="openNotes()">📝 Заметки</button>
     <button class="btn btn-ghost" onclick="openReport()">📊 Отчёт по участнику</button>
-    <button class="btn btn-ghost" onclick="window.print()">↓ Печать</button>
+    <button class="btn btn-ghost" onclick="exportToExcel()" style="font-size:11px;padding:5px 10px">📊 Excel</button>
+    <button class="btn btn-ghost" onclick="window.print()" style="font-size:11px;padding:5px 10px">🖨️</button>
   </div>
 </div>
 
@@ -552,6 +580,27 @@ body {
           <button class="notes-add-btn" onclick="addNotesTask()">+ Добавить</button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- TASKS TAB MODAL -->
+<div class="tasktab-overlay" id="tasktab-overlay" onclick="if(event.target===this)closeTasksTab()">
+  <div class="tasktab-modal">
+    <div class="tasktab-head">
+      <h2>📋 Задачи</h2>
+      <select class="tasktab-person-sel" id="tasktab-person" onchange="renderTasksTab()">
+        <option value="">— Выберите сотрудника —</option>
+      </select>
+      <button class="notes-close" onclick="closeTasksTab()">×</button>
+    </div>
+    <div class="tasktab-add-row">
+      <input class="notes-add-inp" id="tasktab-title-inp" placeholder="Новая задача..." style="flex:1" onkeydown="if(event.key==='Enter')addTaskTabTask()">
+      <input class="notes-add-inp tasktab-dl" id="tasktab-dl-inp" type="date" title="Срок выполнения">
+      <button class="notes-add-btn" onclick="addTaskTabTask()">+ Добавить</button>
+    </div>
+    <div class="tasktab-body" id="tasktab-body">
+      <div class="tasktab-empty">Выберите сотрудника для просмотра задач</div>
     </div>
   </div>
 </div>
@@ -690,14 +739,21 @@ function startFbListeners() {
     const raw = snap.val();
     if (first.tasks) {
       first.tasks = false;
-      if (raw === null) { const local = localStorage.getItem('fz_tasks'); if (local && local !== '[]') fbSet('fz_tasks', JSON.parse(local)); return; }
+      const local = localStorage.getItem('fz_tasks');
+      if (raw === null) { if (local && local !== '[]') fbSet('fz_tasks', JSON.parse(local)); return; }
+      // На начальной загрузке: если локальные данные есть — оставляем их, пушим в Firebase
+      if (local && local !== '[]') { _tasksWriteTime = Date.now(); fbSet('fz_tasks', JSON.parse(local)); return; }
       localStorage.setItem('fz_tasks', raw); return;
     }
     if (raw === null) return;
+    // Игнорируем Firebase-эхо в течение 3 сек после локальной записи
+    if (Date.now() - _tasksWriteTime < 3000) return;
     if (raw === localStorage.getItem('fz_tasks')) return;
     localStorage.setItem('fz_tasks', raw);
     const sp = document.getElementById('sprint-overlay');
     if (sp && sp.classList.contains('open')) renderSprint();
+    const tt = document.getElementById('tasktab-overlay');
+    if (tt && tt.classList.contains('open')) renderTasksTab();
   });
 
   db.ref('fz_vt_people').on('value', snap => {
@@ -1387,6 +1443,7 @@ function pushToTracker(m, isUpdate) {
   }
 
   localStorage.setItem('fz_tasks', JSON.stringify(trackerTasks));
+  _tasksWriteTime = Date.now();
   fbSet('fz_tasks', trackerTasks);
   m.status = 'done';
   m.savedAt = new Date().toISOString();
@@ -1521,6 +1578,25 @@ function showConfirm(title, text, cb) {
 function closeConfirm() { document.getElementById('confirm-modal').classList.remove('open'); confirmCallback = null; }
 document.getElementById('confirm-ok').addEventListener('click', () => { const cb = confirmCallback; closeConfirm(); cb && cb(); });
 
+// ── EXCEL EXPORT ──────────────────────────────────────────────────────────
+function exportToExcel() {
+  const tasks = getSprintTasks();
+  const rows = [['Сотрудник','Задача','Статус','Срок','Источник','Неделя спринта']];
+  tasks.forEach(t => {
+    const src = t.meetingId === 'standalone' ? 'Личная задача' : (t.meetingId ? 'Встреча' : '-');
+    const status = t.done ? 'Выполнено' : 'В работе';
+    const dl = t.deadline ? new Date(t.deadline).toLocaleDateString('ru-RU') : '';
+    rows.push([t.resp||'', t.title||'', status, dl, src, t.sprintWeek||'']);
+  });
+  const csv = '﻿' + rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'tasks_' + new Date().toLocaleDateString('ru-RU').replace(/\./g,'-') + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('📊 Файл скачан — откройте в Excel');
+}
+
 // ── TOAST ─────────────────────────────────────────────────────────────────
 function showToast(msg) {
   const t = document.createElement('div');
@@ -1648,11 +1724,92 @@ function openSprint() {
 function closeSprint() {
   document.getElementById('sprint-overlay').classList.remove('open');
 }
+
+/* ── TASKS TAB ── */
+function openTasksTab() {
+  document.getElementById('tasktab-overlay').classList.add('open');
+  const sel = document.getElementById('tasktab-person');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">— Выберите сотрудника —</option>';
+  vtPeople.forEach(p => {
+    const o = document.createElement('option');
+    o.value = p.label; o.textContent = p.label;
+    if (p.label === prev) o.selected = true;
+    sel.appendChild(o);
+  });
+  renderTasksTab();
+}
+function closeTasksTab() { document.getElementById('tasktab-overlay').classList.remove('open'); }
+
+function renderTasksTab() {
+  const person = document.getElementById('tasktab-person').value;
+  const body = document.getElementById('tasktab-body');
+  if (!person) { body.innerHTML = '<div class="tasktab-empty">Выберите сотрудника для просмотра задач</div>'; return; }
+  const allTasks = getSprintTasks().filter(t => t.resp === person);
+  const active = allTasks.filter(t => !t.done);
+  const done = allTasks.filter(t => t.done);
+  let html = '';
+  if (!allTasks.length) { html = '<div class="tasktab-empty">Нет задач для этого сотрудника</div>'; }
+  else {
+    if (active.length) {
+      html += '<div class="tasktab-group"><div class="tasktab-group-title">Активные (' + active.length + ')</div>';
+      active.forEach(t => { html += _ttRow(t); }); html += '</div>';
+    }
+    if (done.length) {
+      html += '<div class="tasktab-group"><div class="tasktab-group-title">Выполненные (' + done.length + ')</div>';
+      done.forEach(t => { html += _ttRow(t); }); html += '</div>';
+    }
+  }
+  body.innerHTML = html;
+  body.querySelectorAll('.tasktab-chk').forEach(chk => {
+    chk.addEventListener('change', () => {
+      const ts = getSprintTasks(), t = ts.find(x => x.id === chk.dataset.tid);
+      if (t) { t.done = chk.checked; saveSprintTasks(ts); renderTasksTab(); }
+    });
+  });
+  body.querySelectorAll('.tasktab-del').forEach(btn => {
+    btn.addEventListener('click', () => { if (!confirm('Удалить задачу?')) return; saveSprintTasks(getSprintTasks().filter(x => x.id !== btn.dataset.tid)); renderTasksTab(); });
+  });
+  body.querySelectorAll('.tasktab-sprint-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ts = getSprintTasks(), t = ts.find(x => x.id === btn.dataset.tid);
+      if (t) { t.sprint = true; t.sprintWeek = getWeekStr(new Date()); saveSprintTasks(ts); renderTasksTab(); showToast('⚡ Задача добавлена в спринт'); }
+    });
+  });
+}
+function _ttRow(t) {
+  const curWeek = getWeekStr(new Date());
+  const inSprint = t.sprint && t.sprintWeek === curWeek;
+  const overdue = t.deadline && !t.done && new Date(t.deadline) < new Date();
+  const dlStr = t.deadline ? new Date(t.deadline).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'}) : '';
+  const src = (t.meetingId && t.meetingId !== 'standalone') ? '<span class="tasktab-row-src">📋 Встреча</span>' : '';
+  const spBtn = !t.done && !inSprint ? `<button class="tasktab-sprint-btn" data-tid="${escHtml(t.id)}" title="В спринт">⚡</button>` : (inSprint ? '<span style="font-size:10px;color:var(--accent)">⚡</span>' : '');
+  const dl = dlStr ? `<span class="tasktab-row-dl${overdue?' overdue':''}">${dlStr}</span>` : '';
+  return `<div class="tasktab-row">
+    <input type="checkbox" class="notes-chk tasktab-chk" data-tid="${escHtml(t.id)}" ${t.done?'checked':''}>
+    <span class="tasktab-row-title${t.done?' tasktab-row-done':''}">${escHtml(t.title)}</span>
+    ${dl}${src}${spBtn}
+    <button class="tasktab-row-del tasktab-del" data-tid="${escHtml(t.id)}">×</button>
+  </div>`;
+}
+function addTaskTabTask() {
+  const person = document.getElementById('tasktab-person').value;
+  if (!person) { showToast('Выберите сотрудника'); return; }
+  const inp = document.getElementById('tasktab-title-inp');
+  const title = inp.value.trim(); if (!title) return;
+  const dl = document.getElementById('tasktab-dl-inp').value;
+  const ts = getSprintTasks();
+  ts.push({ id: Date.now().toString()+Math.random().toString(36).slice(2), title, resp: person, done: false, sprint: false, sprintWeek: '', meetingId: 'standalone', deadline: dl||null, note: '' });
+  saveSprintTasks(ts);
+  inp.value = ''; document.getElementById('tasktab-dl-inp').value = '';
+  renderTasksTab();
+}
 function sprintPrevWeek() { sprintWeek = offsetWeek(sprintWeek, -1); renderSprint(); }
 function sprintNextWeek() { sprintWeek = offsetWeek(sprintWeek, +1); renderSprint(); }
 
+let _tasksWriteTime = 0;
 function getSprintTasks() { return JSON.parse(localStorage.getItem('fz_tasks') || '[]'); }
-function saveSprintTasks(t) { localStorage.setItem('fz_tasks', JSON.stringify(t)); fbSet('fz_tasks', t); }
+function saveSprintTasks(t) { localStorage.setItem('fz_tasks', JSON.stringify(t)); _tasksWriteTime = Date.now(); fbSet('fz_tasks', t); }
 
 function renderSprint() {
   document.getElementById('sprint-week-lbl').textContent = weekLabel(sprintWeek);
@@ -1821,6 +1978,15 @@ function renderReport() {
       });
     });
 
+  // from fz_tasks tracker (standalone tasks created in Tasks Tab)
+  if (typeF === 'all') {
+    getSprintTasks()
+      .filter(t => t.resp === personLabel && t.meetingId === 'standalone')
+      .forEach(t => {
+        rows.push({ ...t, fromDate: 'standalone', fromType: 'standalone', fromId: t.id });
+      });
+  }
+
   // apply filter
   const visible = rows.filter(r => {
     if (filter === 'open') return !r.done;
@@ -1845,29 +2011,43 @@ function renderReport() {
     byDate[k].push(r);
   });
 
-  body.innerHTML = Object.keys(byDate).sort((a,b) => b.localeCompare(a)).map(date => {
-    const typeIcon = byDate[date][0].fromType === 'wr' ? '📋 Weekly Review' : '👥 1-1';
-    const dateLabel = date !== '—' ? fmtDateFull(date) : '—';
-    const rowsHtml = byDate[date].map((r, ri) => `
+  // put standalone group first, then sort the rest by date desc
+  const standaloneKey = 'standalone';
+  const sortedKeys = Object.keys(byDate).filter(k => k !== standaloneKey).sort((a,b) => b.localeCompare(a));
+  if (byDate[standaloneKey]) sortedKeys.unshift(standaloneKey);
+
+  body.innerHTML = sortedKeys.map(date => {
+    const ft = byDate[date][0].fromType;
+    const typeIcon = date === 'standalone' ? '📋 Личные задачи' : (ft === 'wr' ? '📋 Weekly Review' : '👥 1-1');
+    const dateLabel = date === 'standalone' ? '' : (date !== '—' ? (' · ' + fmtDateFull(date)) : '');
+    const rowsHtml = byDate[date].map((r) => `
       <div class="rpt-row ${r.done ? 'done-row' : ''}">
         <input type="checkbox" class="rpt-check" ${r.done ? 'checked' : ''}
           data-key="${escHtml(personKey)}" data-mid="${r.fromId}" data-type="${r.fromType}"
-          data-title="${escHtml(r.title)}" title="${r.done ? 'Выполнено' : 'Отметить выполненным'}">
+          data-title="${escHtml(r.title)}" data-fzid="${r.fromType==='standalone'?escHtml(r.id):''}"
+          title="${r.done ? 'Выполнено' : 'Отметить выполненным'}">
         <span class="rpt-title ${r.done ? 'done-txt' : ''}">${escHtml(r.title)}</span>
         ${r.priority === 'hot' ? '<span class="rpt-chip">🔥</span>' : ''}
-        ${r.date ? `<span class="rpt-chip">📅 ${fmtDate(r.date)}</span>` : ''}
+        ${r.deadline ? `<span class="rpt-chip">📅 ${new Date(r.deadline).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'})}</span>` : (r.date ? `<span class="rpt-chip">📅 ${fmtDate(r.date)}</span>` : '')}
         ${r.done ? '<span style="font-size:11px;color:var(--green);font-weight:700">✓</span>' : '<span style="font-size:11px;color:#e67e22;font-weight:700">●</span>'}
       </div>`).join('');
     return `<div class="rpt-group">
-      <div class="rpt-group-title">${typeIcon} · ${dateLabel}</div>
+      <div class="rpt-group-title">${typeIcon}${dateLabel}</div>
       ${rowsHtml}
     </div>`;
   }).join('');
 
-  // checkboxes in report update the source meeting
+  // checkboxes in report update the source
   document.querySelectorAll('.rpt-check').forEach(cb => {
     cb.addEventListener('change', () => {
-      const { mid, type: mtype, key, title } = cb.dataset;
+      const { mid, type: mtype, key, title, fzid } = cb.dataset;
+      if (mtype === 'standalone') {
+        const ts = getSprintTasks();
+        const t = ts.find(x => x.id === fzid);
+        if (t) { t.done = cb.checked; saveSprintTasks(ts); }
+        renderReport();
+        return;
+      }
       const m = meetings.find(x => x.id === mid);
       if (!m) return;
       if (mtype === 'vt') {
@@ -1965,8 +2145,12 @@ function escHtml(s) {
 
 // ── SMART FACTORY ─────────────────────────────────────────────────────────
 let sfIdeas = JSON.parse(localStorage.getItem('fz_sf_ideas') || '[]');
+let sfCats = JSON.parse(localStorage.getItem('fz_sf_cats') || '[]');
 let sfFormOpen = false;
 let sfPhotoData = null;
+let sfEditId = null;
+let sfFilterCat = ''; // '' = all
+let sfCatMgmtOpen = false;
 
 function openSmartFactory() { document.getElementById('sf-overlay').classList.add('open'); renderSF(); }
 function closeSmartFactory() { document.getElementById('sf-overlay').classList.remove('open'); }
@@ -1975,18 +2159,61 @@ function saveSFIdeas() {
   localStorage.setItem('fz_sf_ideas', JSON.stringify(sfIdeas));
   fbSet('fz_sf_ideas', sfIdeas);
 }
+function saveSFCats() {
+  localStorage.setItem('fz_sf_cats', JSON.stringify(sfCats));
+  fbSet('fz_sf_cats', sfCats);
+}
+function sfAddCat() {
+  const inp = document.getElementById('sf-cat-inp');
+  const name = inp?.value.trim(); if (!name) return;
+  if (sfCats.includes(name)) { inp.value = ''; return; }
+  sfCats.push(name); saveSFCats(); inp.value = ''; renderSF();
+}
+function sfDeleteCat(name) {
+  sfCats = sfCats.filter(c => c !== name);
+  sfIdeas.forEach(i => { if (i.category === name) i.category = ''; });
+  saveSFCats(); saveSFIdeas();
+  if (sfFilterCat === name) sfFilterCat = '';
+  renderSF();
+}
 
 function sfShowForm() {
-  sfFormOpen = true; sfPhotoData = null; renderSF();
+  sfFormOpen = true; sfEditId = null; sfPhotoData = null; sfCatMgmtOpen = false; renderSF();
   setTimeout(() => document.getElementById('sf-title-inp')?.focus(), 50);
 }
-function sfHideForm() { sfFormOpen = false; sfPhotoData = null; renderSF(); }
+function sfHideForm() { sfFormOpen = false; sfEditId = null; sfPhotoData = null; renderSF(); }
+function sfToggleCatMgmt() { sfCatMgmtOpen = !sfCatMgmtOpen; renderSF(); }
+
+function sfStartEdit(id) {
+  sfEditId = id; sfFormOpen = true; sfCatMgmtOpen = false;
+  const idea = sfIdeas.find(x => x.id === id);
+  sfPhotoData = idea?.photo || null;
+  renderSF();
+  setTimeout(() => {
+    const t = document.getElementById('sf-title-inp');
+    const d = document.getElementById('sf-desc-inp');
+    const c = document.getElementById('sf-cat-sel');
+    if (t && idea) t.value = idea.title;
+    if (d && idea) d.value = idea.desc || '';
+    if (c && idea) c.value = idea.category || '';
+    if (sfPhotoData) {
+      const prev = document.getElementById('sf-photo-prev');
+      if (prev) { prev.src = sfPhotoData; prev.style.display = 'block'; }
+    }
+    t?.focus();
+  }, 50);
+}
+
+function sfToggleDone(id) {
+  const idea = sfIdeas.find(x => x.id === id);
+  if (idea) idea.done = !idea.done;
+  saveSFIdeas(); renderSF();
+}
 
 function sfPhotoChange(input) {
   const file = input.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    // compress via canvas
     const img = new Image();
     img.onload = () => {
       const MAX = 800;
@@ -2006,10 +2233,17 @@ function sfPhotoChange(input) {
 function sfSaveIdea() {
   const title = document.getElementById('sf-title-inp')?.value.trim();
   const desc = document.getElementById('sf-desc-inp')?.value.trim();
+  const category = document.getElementById('sf-cat-sel')?.value || '';
   if (!title) { alert('Введите название идеи'); return; }
-  sfIdeas.unshift({ id: Date.now().toString(), title, desc, photo: sfPhotoData || null, date: new Date().toISOString().slice(0,10) });
-  saveSFIdeas(); sfFormOpen = false; sfPhotoData = null; renderSF();
-  showToast('💡 Идея добавлена в банк');
+  if (sfEditId) {
+    const idea = sfIdeas.find(x => x.id === sfEditId);
+    if (idea) { idea.title = title; idea.desc = desc; idea.category = category; if (sfPhotoData) idea.photo = sfPhotoData; }
+    showToast('✏️ Идея обновлена');
+  } else {
+    sfIdeas.unshift({ id: Date.now().toString(), title, desc, category, photo: sfPhotoData || null, date: new Date().toISOString().slice(0,10), done: false });
+    showToast('💡 Идея добавлена в банк');
+  }
+  saveSFIdeas(); sfFormOpen = false; sfEditId = null; sfPhotoData = null; renderSF();
 }
 
 function sfDeleteIdea(id) {
@@ -2020,36 +2254,67 @@ function sfDeleteIdea(id) {
 function renderSF() {
   const body = document.getElementById('sf-body'); if (!body) return;
   let html = '';
-  if (sfFormOpen) {
-    html += `<div class="sf-form">
-      <div class="sf-form-title">Новая идея</div>
-      <input class="sf-inp" id="sf-title-inp" placeholder="Название идеи *">
-      <textarea class="sf-textarea" id="sf-desc-inp" placeholder="Описание (необязательно)"></textarea>
-      <div>
-        <label class="sf-photo-label">📷 Прикрепить фото
-          <input type="file" accept="image/*" style="display:none" onchange="sfPhotoChange(this)">
-        </label>
-        <img id="sf-photo-prev" class="sf-photo-preview">
-      </div>
-      <div class="sf-form-row">
-        <button class="sf-cancel-btn" onclick="sfHideForm()">Отмена</button>
-        <button class="sf-save-btn" onclick="sfSaveIdea()">Сохранить идею</button>
+
+  // ── Category management panel ──
+  html += `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+    <button class="sf-cancel-btn" style="font-size:11.5px;padding:5px 12px" onclick="sfToggleCatMgmt()">🗂 Разделы ${sfCatMgmtOpen?'▲':'▼'}</button>
+    <button class="sf-cancel-btn" style="font-size:11.5px;padding:5px 12px;background:${sfFilterCat===''?'var(--accent)':'#fff'};color:${sfFilterCat===''?'#fff':'var(--text)'};border-color:${sfFilterCat===''?'var(--accent)':'var(--border)'}" onclick="sfFilterCat='';renderSF()">Все</button>
+    ${sfCats.map(c => `<button class="sf-cancel-btn" style="font-size:11.5px;padding:5px 12px;background:${sfFilterCat===c?'var(--accent)':'#fff'};color:${sfFilterCat===c?'#fff':'var(--text)'};border-color:${sfFilterCat===c?'var(--accent)':'var(--border)'}" onclick="sfFilterCat='${escHtml(c)}';renderSF()">${escHtml(c)}</button>`).join('')}
+  </div>`;
+
+  if (sfCatMgmtOpen) {
+    html += `<div class="sf-form" style="padding:12px 14px">
+      <div class="sf-form-title" style="margin-bottom:8px">Управление разделами</div>
+      ${sfCats.length === 0 ? `<div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">Разделов пока нет</div>` : ''}
+      ${sfCats.map(c => `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px">
+        <span style="flex:1">📁 ${escHtml(c)}</span>
+        <button class="sf-item-del" onclick="sfDeleteCat('${escHtml(c)}')" title="Удалить раздел">🗑</button>
+      </div>`).join('')}
+      <div style="display:flex;gap:7px;margin-top:4px">
+        <input class="sf-inp" id="sf-cat-inp" placeholder="Название раздела..." style="flex:1" onkeydown="if(event.key==='Enter')sfAddCat()">
+        <button class="sf-save-btn" onclick="sfAddCat()">+ Добавить</button>
       </div>
     </div>`;
   }
-  if (sfIdeas.length === 0 && !sfFormOpen) {
-    html += `<div class="sf-empty">💡 Банк идей пуст — нажмите «+ Добавить идею»</div>`;
-  } else if (sfIdeas.length > 0) {
-    html += `<div class="sf-list">` + sfIdeas.map((idea, i) => `
-      <div class="sf-item">
+
+  if (sfFormOpen) {
+    const catOptions = sfCats.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('');
+    html += `<div class="sf-form">
+      <div class="sf-form-title">${sfEditId ? '✏️ Редактировать идею' : 'Новая идея'}</div>
+      <input class="sf-inp" id="sf-title-inp" placeholder="Название идеи *">
+      <textarea class="sf-textarea" id="sf-desc-inp" placeholder="Описание (необязательно)"></textarea>
+      ${sfCats.length > 0 ? `<select class="sf-inp" id="sf-cat-sel"><option value="">— Без раздела —</option>${catOptions}</select>` : ''}
+      <div>
+        <label class="sf-photo-label">📷 ${sfPhotoData ? 'Заменить фото' : 'Прикрепить фото'}
+          <input type="file" accept="image/*" style="display:none" onchange="sfPhotoChange(this)">
+        </label>
+        <img id="sf-photo-prev" class="sf-photo-preview" ${sfPhotoData ? `src="${sfPhotoData}" style="display:block"` : ''}>
+      </div>
+      <div class="sf-form-row">
+        <button class="sf-cancel-btn" onclick="sfHideForm()">Отмена</button>
+        <button class="sf-save-btn" onclick="sfSaveIdea()">${sfEditId ? 'Сохранить изменения' : 'Сохранить идею'}</button>
+      </div>
+    </div>`;
+  }
+
+  const filtered = sfFilterCat ? sfIdeas.filter(i => i.category === sfFilterCat) : sfIdeas;
+  if (filtered.length === 0 && !sfFormOpen) {
+    html += `<div class="sf-empty">💡 ${sfFilterCat ? `Идей в разделе «${escHtml(sfFilterCat)}» нет` : 'Банк идей пуст — нажмите «+ Добавить идею»'}</div>`;
+  } else if (filtered.length > 0) {
+    html += `<div class="sf-list">` + filtered.map((idea, i) => `
+      <div class="sf-item ${idea.done ? 'sf-item-done' : ''}">
+        <input type="checkbox" class="notes-chk" style="margin-top:4px;flex-shrink:0" ${idea.done?'checked':''} onchange="sfToggleDone('${idea.id}')" title="Выполнено">
         ${idea.photo
           ? `<img class="sf-item-thumb" src="${idea.photo}" alt="">`
           : `<div class="sf-item-thumb-empty">💡</div>`}
         <div class="sf-item-content">
-          <div class="sf-item-title">${i+1}. ${escHtml(idea.title)}</div>
+          ${idea.category ? `<div style="font-size:10.5px;color:var(--muted);margin-bottom:2px">📁 ${escHtml(idea.category)}</div>` : ''}
+          <div class="sf-item-title ${idea.done ? 'notes-task-done' : ''}">${i+1}. ${escHtml(idea.title)}</div>
           ${idea.desc ? `<div class="sf-item-desc">${escHtml(idea.desc)}</div>` : ''}
           <div class="sf-item-footer">
             <span class="sf-item-date">${idea.date || ''}</span>
+            ${idea.done ? '<span style="font-size:11px;color:var(--green);font-weight:700">✓ Выполнено</span>' : ''}
+            <button class="sf-cancel-btn" style="padding:3px 10px;font-size:11px;margin-left:auto" onclick="sfStartEdit('${idea.id}')">✏️ Изменить</button>
             <button class="sf-item-del" onclick="sfDeleteIdea('${idea.id}')" title="Удалить">🗑</button>
           </div>
         </div>
@@ -2058,7 +2323,17 @@ function renderSF() {
   body.innerHTML = html;
 }
 
-// Firebase listener for Smart Factory
+// Firebase listeners for Smart Factory
+db.ref('fz_sf_cats').on('value', snap => {
+  const raw = snap.val();
+  if (raw === null) { if (sfCats.length > 0) fbSet('fz_sf_cats', sfCats); return; }
+  const remote = JSON.parse(raw);
+  if (JSON.stringify(remote) === JSON.stringify(sfCats)) return;
+  sfCats = remote;
+  localStorage.setItem('fz_sf_cats', raw);
+  const overlay = document.getElementById('sf-overlay');
+  if (overlay && overlay.classList.contains('open')) renderSF();
+});
 db.ref('fz_sf_ideas').on('value', snap => {
   const raw = snap.val();
   if (raw === null) { if (sfIdeas.length > 0) fbSet('fz_sf_ideas', sfIdeas); return; }
